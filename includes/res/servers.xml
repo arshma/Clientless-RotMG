@@ -1,0 +1,443 @@
+<Chars nextCharId="1" maxNumChars="1">
+    <Account>
+        <Credits>40</Credits>
+        <NextCharSlotPrice>600</NextCharSlotPrice>
+        <AccountId>-1</AccountId>
+        <Name>Lauk</Name>
+        <BeginnerPackageTimeLeft>604800</BeginnerPackageTimeLeft>
+        <IsAgeVerified>0</IsAgeVerified>
+        <isFirstDeath />
+        <Stats>
+            <BestCharFame>0</BestCharFame>
+            <TotalFame>0</TotalFame>
+            <Fame>0</Fame>
+        </Stats>
+    </Account>
+    <News></News>
+    <Servers>
+        <Server>
+            <Name>USEast</Name>
+            <DNS>52.23.232.42</DNS>
+            <Lat>42.36</Lat>
+            <Long>-71.06</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>AsiaSouthEast</Name>
+            <DNS>52.77.221.237</DNS>
+            <Lat>1.35</Lat>
+            <Long>103.82</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>USSouth</Name>
+            <DNS>52.91.68.60</DNS>
+            <Lat>35.23</Lat>
+            <Long>-80.84</Long>
+            <Usage>0.75</Usage>
+        </Server>
+        <Server>
+            <Name>USSouthWest</Name>
+            <DNS>54.183.179.205</DNS>
+            <Lat>32.80</Lat>
+            <Long>-96.77</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>USEast2</Name>
+            <DNS>52.91.203.118</DNS>
+            <Lat>42.89</Lat>
+            <Long>-78.88</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>USNorthWest</Name>
+            <DNS>54.234.151.78</DNS>
+            <Lat>42.33</Lat>
+            <Long>-122.88</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>AsiaEast</Name>
+            <DNS>54.199.197.208</DNS>
+            <Lat>25.09</Lat>
+            <Long>121.56</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>EUSouthWest</Name>
+            <DNS>52.47.178.13</DNS>
+            <Lat>48.86</Lat>
+            <Long>2.35</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>USSouth2</Name>
+            <DNS>54.183.236.213</DNS>
+            <Lat>33.78</Lat>
+            <Long>-88.59</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>EUNorth2</Name>
+            <DNS>52.59.198.155</DNS>
+            <Lat>59.33</Lat>
+            <Long>18.06</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>EUSouth</Name>
+            <DNS>52.47.150.186</DNS>
+            <Lat>53.00</Lat>
+            <Long>-8.00</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>USSouth3</Name>
+            <DNS>13.57.182.96</DNS>
+            <Lat>-30.03</Lat>
+            <Long>-51.23</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>EUWest2</Name>
+            <DNS>34.243.37.98</DNS>
+            <Lat>51.51</Lat>
+            <Long>-0.13</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>USMidWest</Name>
+            <DNS>18.220.226.127</DNS>
+            <Lat>38.63</Lat>
+            <Long>-90.20</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>EUWest</Name>
+            <DNS>52.47.149.74</DNS>
+            <Lat>53.48</Lat>
+            <Long>-2.23</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>USEast3</Name>
+            <DNS>54.157.6.58</DNS>
+            <Lat>100.00</Lat>
+            <Long>100.00</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>USWest</Name>
+            <DNS>13.57.254.131</DNS>
+            <Lat>37.34</Lat>
+            <Long>-121.89</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>USWest3</Name>
+            <DNS>54.67.119.179</DNS>
+            <Lat>37.76</Lat>
+            <Long>-121.95</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>USMidWest2</Name>
+            <DNS>18.218.255.91</DNS>
+            <Lat>41.88</Lat>
+            <Long>-87.63</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>EUEast</Name>
+            <DNS>18.195.167.79</DNS>
+            <Lat>54.69</Lat>
+            <Long>25.28</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>Australia</Name>
+            <DNS>54.252.165.65</DNS>
+            <Lat>-33.87</Lat>
+            <Long>151.21</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>EUNorth</Name>
+            <DNS>54.93.78.148</DNS>
+            <Lat>59.33</Lat>
+            <Long>18.06</Long>
+            <Usage>0.00</Usage>
+        </Server>
+        <Server>
+            <Name>USWest2</Name>
+            <DNS>54.215.251.128</DNS>
+            <Lat>0.00</Lat>
+            <Long>0.00</Long>
+            <Usage>0.00</Usage>
+        </Server>
+    </Servers>
+    <Lat>37.67</Lat>
+    <Long>-122.08</Long>
+    <ClassAvailabilityList>
+        <ClassAvailability id="Rogue">available</ClassAvailability>
+        <ClassAvailability id="Assassin">available</ClassAvailability>
+        <ClassAvailability id="Huntress">available</ClassAvailability>
+        <ClassAvailability id="Mystic">available</ClassAvailability>
+        <ClassAvailability id="Trickster">available</ClassAvailability>
+        <ClassAvailability id="Sorcerer">available</ClassAvailability>
+        <ClassAvailability id="Ninja">available</ClassAvailability>
+        <ClassAvailability id="Archer">available</ClassAvailability>
+        <ClassAvailability id="Wizard">available</ClassAvailability>
+        <ClassAvailability id="Priest">available</ClassAvailability>
+        <ClassAvailability id="Samurai">available</ClassAvailability>
+        <ClassAvailability id="Necromancer">available</ClassAvailability>
+        <ClassAvailability id="Warrior">available</ClassAvailability>
+        <ClassAvailability id="Knight">available</ClassAvailability>
+        <ClassAvailability id="Paladin">available</ClassAvailability>
+    </ClassAvailabilityList>
+    <ItemCosts>
+        <ItemCost type="1025" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="1026" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="19371" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="1028" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="1029" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="1030" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="1027" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5968" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10966" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="5969" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="8971" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="29770" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="29771" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="10937" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="6005" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="29786" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="29787" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="29788" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="29789" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="29790" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="29791" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="29799" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="29800" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="29801" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="32701" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="29808" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="29809" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="29810" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="29811" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="29813" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="29814" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="29815" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="29816" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="29817" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="29818" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="10961" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="5911" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5997" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="29840" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="29841" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="29842" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="29843" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="29844" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="29845" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="29846" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="8855" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="29848" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="9030" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="10930" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10931" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10932" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10933" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10934" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10935" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10936" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="6004" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10938" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10940" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10941" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10942" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10943" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10944" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10959" purchasable="0" expires="0">1500</ItemCost>
+        <ItemCost type="10960" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19153" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="10962" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19155" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19156" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19157" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19158" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="10967" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="10968" purchasable="0" expires="0">5000</ItemCost>
+        <ItemCost type="10969" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="10970" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="10971" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="10972" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="10973" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="10974" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19152" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="5859" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="5860" purchasable="0" expires="0">5000</ItemCost>
+        <ItemCost type="5861" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="5862" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="5863" purchasable="0" expires="0">1500</ItemCost>
+        <ItemCost type="5864" purchasable="0" expires="0">1500</ItemCost>
+        <ItemCost type="5865" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="5866" purchasable="0" expires="0">1500</ItemCost>
+        <ItemCost type="19154" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="10963" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="5878" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5879" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5880" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="10964" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="10965" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="8964" purchasable="1" expires="0">1500</ItemCost>
+        <ItemCost type="8965" purchasable="1" expires="0">1500</ItemCost>
+        <ItemCost type="8966" purchasable="1" expires="0">1500</ItemCost>
+        <ItemCost type="8967" purchasable="1" expires="0">1500</ItemCost>
+        <ItemCost type="8968" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="8969" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="8970" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="19159" purchasable="0" expires="0">5000</ItemCost>
+        <ItemCost type="8972" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="8973" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="8974" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="8975" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="8976" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="8977" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="8978" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="8979" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="5909" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5910" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="2521" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="5912" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5913" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5914" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5915" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="902" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="6023" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="6003" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="904" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="9012" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="9013" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="9014" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="6025" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="312" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="313" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="834" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="9027" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="836" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="837" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="838" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="9031" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="840" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="841" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="842" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="843" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="844" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="845" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="846" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="847" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="848" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="849" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="850" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="851" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="852" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="853" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="854" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="855" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="856" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="912" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="32657" purchasable="0" expires="0">1500</ItemCost>
+        <ItemCost type="872" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="5994" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5995" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5996" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="32658" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="5998" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5999" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="6000" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="6001" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="6002" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="883" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="884" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="885" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="6006" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="6007" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="888" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="898" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="899" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="900" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="901" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="6022" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="903" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="6024" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="905" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="6026" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="29847" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="9026" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="32654" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="32656" purchasable="0" expires="0">1500</ItemCost>
+        <ItemCost type="913" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="914" purchasable="0" expires="0">1500</ItemCost>
+        <ItemCost type="915" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="916" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="917" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="9028" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="9029" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="32675" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="32676" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="32677" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="8614" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="19370" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="839" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="19372" purchasable="0" expires="0">5000</ItemCost>
+        <ItemCost type="19373" purchasable="0" expires="0">5000</ItemCost>
+        <ItemCost type="19374" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19375" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="9032" purchasable="1" expires="0">300</ItemCost>
+        <ItemCost type="19385" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19387" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19388" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19389" purchasable="0" expires="0">1500</ItemCost>
+        <ItemCost type="19390" purchasable="0" expires="0">1500</ItemCost>
+        <ItemCost type="19391" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19392" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19393" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19394" purchasable="0" expires="0">5000</ItemCost>
+        <ItemCost type="19403" purchasable="0" expires="0">1500</ItemCost>
+        <ItemCost type="19404" purchasable="0" expires="0">1500</ItemCost>
+        <ItemCost type="32718" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="19407" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="8766" purchasable="1" expires="0">900</ItemCost>
+        <ItemCost type="19409" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19410" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19411" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19412" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19413" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19414" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19415" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19416" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19417" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19418" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="19419" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19420" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19421" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19422" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19423" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19424" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19425" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19426" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19427" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19428" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19429" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19430" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19431" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19432" purchasable="1" expires="0">2000</ItemCost>
+        <ItemCost type="19433" purchasable="0" expires="0">2000</ItemCost>
+        <ItemCost type="5881" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="5970" purchasable="0" expires="0">100000</ItemCost>
+        <ItemCost type="835" purchasable="1" expires="0">600</ItemCost>
+        <ItemCost type="32766" purchasable="1" expires="0">2000</ItemCost>
+    </ItemCosts>
+</Chars>
