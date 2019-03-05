@@ -1,5 +1,9 @@
 package util;
 
+import java.io.IOException;
+import net.packets.PacketReader;
+import net.packets.PacketWriter;
+
 public class Constants {
     
     public enum ConditionEffects {
@@ -42,6 +46,80 @@ public class Constants {
         }
         public int getVal() {
             return this.val;
+        }
+    }
+    
+    public enum EffectType {
+        HEAL((byte)1),
+        TELEPORT((byte)2),
+        STREAM((byte)3),
+        THROW((byte)4),
+        NOVA((byte)5),
+        POISON((byte)6),
+        LINE((byte)7),
+        BURST((byte)8),
+        FLOW((byte)9),
+        RING((byte)10),
+        LIGHTNING((byte)11),
+        COLLAPSE((byte)12),
+        CONEBLAST((byte)13),
+        EARTHQUAKE((byte)14),
+        FLASH((byte)15),
+        BEACHBALL((byte)16),
+        ELECTRICBOLTS((byte)17),
+        ELECTRICFLASHING((byte)18),
+        RISINGFURY((byte)19);
+        
+        private byte val;
+        private EffectType(byte val) {
+            this.val = val;
+        }
+        public byte getVal() {
+            return this.val;
+        }
+        public static EffectType getConst(byte b) {
+            for(EffectType et : EffectType.values()) {
+                if(et.val == b) {
+                    return et;
+                }
+            }
+            return null;
+        }
+    }
+    
+    public static class ARGB {
+        public byte a;
+        public byte b;
+        public byte g;
+        public byte r;
+        
+        public ARGB () {}
+        public ARGB(long argb) {    //uint param
+            this.a = (byte)((argb & 0xff000000) >> 24);
+            this.r = (byte)((argb & 0x00ff0000) >> 16);
+            this.g = (byte)((argb & 0x0000ff00) >> 8);
+            this.b = (byte)((argb & 0x000000ff) >> 0);
+        }
+        public ARGB(byte a, byte r, byte g, byte b) {
+            this.a = a;
+            this.r = r;
+            this.g = g;
+            this.b = b;
+        }
+        
+        public static ARGB read(PacketReader r) throws IOException {
+            ARGB ret = new ARGB();
+            ret.a = r.readByte();
+            ret.r = r.readByte();
+            ret.g = r.readByte();
+            ret.b = r.readByte();
+            return ret;
+        }
+        public void write(PacketWriter w) throws IOException {
+            w.writeByte(this.a);
+            w.writeByte(this.r);
+            w.writeByte(this.g);
+            w.writeByte(this.b);
         }
     }
     
