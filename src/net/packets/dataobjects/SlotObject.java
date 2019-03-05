@@ -6,13 +6,13 @@ import net.packets.PacketWriter;
 
 public class SlotObject extends DataObject {
     public int objectId;
-    public byte slotId;
+    public int slotId;             //ubyte
     public int objectType;
     
     @Override
     public DataObject read(PacketReader r) throws IOException {
         this.objectId = r.readInt();
-        this.slotId = r.readByte();
+        this.slotId = r.readUnsignedByte();
         this.objectType = r.readInt();
         
         return this;

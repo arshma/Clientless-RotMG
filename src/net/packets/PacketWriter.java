@@ -6,13 +6,18 @@ public class PacketWriter implements java.io.DataOutput {
     private java.nio.ByteBuffer buffer;
     
     public PacketWriter() {
-        this.buffer = java.nio.ByteBuffer.wrap(new byte[100000]);
+        this.buffer = java.nio.ByteBuffer.wrap(new byte[4096]);
+    }
+    public PacketWriter(int size) {
+        this.buffer = java.nio.ByteBuffer.allocate(size);
     }
     public PacketWriter(byte[] dst) {
         this.buffer = java.nio.ByteBuffer.wrap(dst);
     }
     
+    //if buffer empty, this returns 'new byte[0]'
     public byte[] getArray() {
+        //System.out.println("Buffer pos is: " + this.buffer.position());
         return java.util.Arrays.copyOf(this.buffer.array(), this.buffer.position());
     }
 
@@ -58,10 +63,6 @@ public class PacketWriter implements java.io.DataOutput {
     @Override
     public void writeInt(int v) throws IOException {
         this.buffer.putInt(v);
-    }
-    
-    public void writeUnsignedInt(long v) throws IOException {
-        this.buffer.putInt((int)(v));
     }
 
     @Override

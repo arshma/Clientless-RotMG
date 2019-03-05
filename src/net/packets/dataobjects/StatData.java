@@ -6,21 +6,26 @@ import net.packets.PacketReader;
 import net.packets.PacketWriter;
 
 public class StatData extends DataObject {
-    public byte type;           //ubyte (aka id)
+    public int type;           //ubyte (aka id)
     public int intValue;
     public String stringValue;
     
     public boolean isStringData() {
-        if(this.type == StatsType.Name || this.type == StatsType.AccountId || this.type == StatsType.OwnerAccountId 
-           || this.type == StatsType.GuildName || this.type == StatsType.PetName) {
-            return true;
+        switch(this.type) {
+            case StatsType.Name:
+            case StatsType.GuildName:
+            case StatsType.PetName:
+            case StatsType.AccountId:
+            case StatsType.OwnerAccountId:
+                return true;
+            default:
+                return false;
         }
-        return false;
     }
 
     @Override
     public DataObject read(PacketReader r) throws IOException {
-        this.type = r.readByte();
+        this.type = r.readUnsignedByte();
         if(isStringData()) {
             this.stringValue = r.readUTF();
         } else {
@@ -42,7 +47,7 @@ public class StatData extends DataObject {
     @Override
     public Object clone() throws CloneNotSupportedException {
         StatData sd = (StatData)super.clone();
-        sd.stringValue = new String(this.stringValue);
+        sd.stringValue = this.stringValue; 
         return sd;
     }
     
@@ -51,15 +56,7 @@ public class StatData extends DataObject {
         return "{Type=" + this.type + ",value=" + (isStringData()?stringValue : (new Integer(intValue)).toString()) + "}";
     }
     
-    public static class StatsType {
-        /*
-        private byte m_type;        //ubyte
-
-        public StatsType(byte type) {
-            this.m_type = type;
-        }
-        */
-        
+    public static class StatsType {        
         public static final byte MaximumHp = 0;
         public static final byte HP = 1;
         public static final byte Size = 2;
@@ -88,28 +85,18 @@ public class StatData extends DataObject {
         public static final byte Dexterity = 28;
         public static final byte Effects = 29;
         public static final byte Stars = 30;
-        public static final byte Name = 31; //Is UTF
+        public static final byte Name = 31;                 //Is UTF
         public static final byte Texture1 = 32;
         public static final byte Texture2 = 33;
         public static final byte MerchandiseType = 34;
         public static final byte Credits = 35;
         public static final byte MerchandisePrice = 36;
-        public static final byte PortalUsable = 37; // "ACTIVE_STAT"
-        public static final byte AccountId = 38; //Is UTF
+        public static final byte PortalUsable = 37;         //"ACTIVE_STAT"
+        public static final byte AccountId = 38;            //Is UTF
         public static final byte AccountFame = 39;
         public static final byte MerchandiseCurrency = 40;
         public static final byte ObjectConnection = 41;
-        /*
-         * Mask :F0F0F0F0
-         * each byte > type
-         * 0:Dot
-         * 1:ushortLine
-         * 2:L
-         * 3:Line
-         * 4:T
-         * 5:Cross
-         * 0x21222112
-        */
+        
         public static final byte MerchandiseRemainingCount = 42;
         public static final byte MerchandiseRemainingMinutes = 43;
         public static final byte MerchandiseDiscount = 44;
@@ -122,7 +109,7 @@ public class StatData extends DataObject {
         public static final byte VitalityBonus = 51;
         public static final byte WisdomBonus = 52;
         public static final byte DexterityBonus = 53;
-        public static final byte OwnerAccountId = 54; //Is UTF
+        public static final byte OwnerAccountId = 54;       //Is UTF
         public static final byte RankRequired = 55;
         public static final byte NameChosen = 56;
         public static final byte CharacterFame = 57;
@@ -130,7 +117,7 @@ public class StatData extends DataObject {
         public static final byte Glowing = 59;
         public static final byte SinkLevel = 60;
         public static final byte AltTextureIndex = 61;
-        public static final byte GuildName = 62; //Is UTF
+        public static final byte GuildName = 62;            //Is UTF
         public static final byte GuildRank = 63;
         public static final byte OxygenBar = 64;
         public static final byte XpBoosterActive = 65;
@@ -150,11 +137,11 @@ public class StatData extends DataObject {
         public static final byte HasBackpack = 79;
         public static final byte Skin = 80;
         public static final byte PetInstanceId = 81;
-        public static final byte PetName = 82; //Is UTF
+        public static final byte PetName = 82;              //Is UTF
         public static final byte PetType = 83;
         public static final byte PetRarity = 84;
         public static final byte PetMaximumLevel = 85;
-        public static final byte PetFamily = 86; //This does do nothing in the client
+        public static final byte PetFamily = 86;            //This does do nothing in the client
         public static final byte PetPoints0 = 87;
         public static final byte PetPoints1 = 88;
         public static final byte PetPoints2 = 89;
@@ -164,7 +151,9 @@ public class StatData extends DataObject {
         public static final byte PetAbilityType0 = 93;
         public static final byte PetAbilityType1 = 94;
         public static final byte PetAbilityType2 = 95;
-        public static final byte Effects2 = 96; // Used for things like Curse, Petrify etc...
+        public static final byte Effects2 = 96;             //Used for things like Curse, Petrify etc...
         public static final byte FortuneTokens = 97;
+        public static final byte SupporterPoints = 98;
+        public static final byte Supporter = 99;
     }    
 }

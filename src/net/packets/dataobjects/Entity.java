@@ -5,12 +5,12 @@ import net.packets.PacketReader;
 import net.packets.PacketWriter;
 
 public class Entity extends DataObject {
-    public int objectType;        //short
+    public int objectType;                  //ushort
     public Status status = new Status();
 
     @Override
     public DataObject read(PacketReader r) throws IOException {
-        this.objectType = r.readShort();
+        this.objectType = r.readUnsignedShort();
         this.status.read(r);
         
         return this;

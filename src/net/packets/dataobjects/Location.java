@@ -9,6 +9,7 @@ public class Location extends DataObject {
     public float y;
     
     public Location() {}
+    
     public Location(float x, float y) {
         this.x = x;
         this.y = y;

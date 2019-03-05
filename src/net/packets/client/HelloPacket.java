@@ -68,8 +68,8 @@ public class HelloPacket extends Packet {
         w.writeShort(this.key.length);
         w.write(this.key);
         //size of the string is written since it's not UTF-8 but other type.
-        w.writeInt(this.mapJson.getBytes().length);
-        w.write(this.mapJson.getBytes());
+        w.writeInt(this.mapJson.getBytes("UTF-8").length);
+        w.write(this.mapJson.getBytes("UTF-8"));
         
         w.writeUTF(this.entryTag);
         w.writeUTF(this.gameNet);
@@ -77,5 +77,15 @@ public class HelloPacket extends Packet {
         w.writeUTF(this.playPlatform);
         w.writeUTF(this.platformToken);
         w.writeUTF(this.userToken);
-    }    
+    }
+    
+    @Override
+    public String toString() {
+        String s =  "HELLO [" + this.buildVersion + ", " + this.gameId + ", " + this.guid + ", " + 
+                    this.random1 + ", " + this.password + ", " + this.random2 + ", " + this.secret + ", " +
+                    this.keyTime + ", " + this.key.length + ", " + this.mapJson + ", " + this.entryTag + ", " + 
+                    this.gameNet + ", " + this.gameNetUserId + ", " + this.playPlatform + ", " +
+                    this.platformToken + ", " + this.userToken + "]";        
+        return s;
+    }
 }

@@ -8,14 +8,14 @@ import net.packets.PacketWriter;
 public class Status extends DataObject {
     public int objectId;
     public Location position = new Location();
-    public ArrayList<StatData> data;
+    public ArrayList<StatData> data = new ArrayList<StatData>();
     
     @Override
     public DataObject read(PacketReader r) throws IOException {
         this.objectId = r.readInt();
         this.position.read(r);
         
-        int size = r.readShort();
+        short size = r.readShort();
         this.data = new ArrayList<StatData>(size);
         for(int i = 0; i < size; i++) {
             StatData sd = new StatData();
@@ -44,6 +44,5 @@ public class Status extends DataObject {
             s.data.add((StatData)sd.clone());
         }
         return s;
-    }
-    
+    }    
 }

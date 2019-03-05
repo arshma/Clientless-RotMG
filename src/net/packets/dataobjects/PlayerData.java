@@ -58,7 +58,6 @@ public class PlayerData {
     public boolean hasBackpack;
     public int skin;
     public Location pos = new Location();
-    // Custom
     public Classes charClass;
     
     
@@ -171,7 +170,7 @@ public class PlayerData {
 
     public float tilesPerTick()
     {
-        // Ticks per second = 5
+        //Ticks per second = 5
         return (4.0f + 5.6f * (this.speed / 75.0f)) / 5.0f;
     }
     

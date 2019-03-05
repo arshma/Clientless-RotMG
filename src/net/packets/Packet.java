@@ -5,10 +5,8 @@ import net.packets.server.*;
 
 
 public abstract class Packet {
-    protected int _id = -1;
-    protected boolean _send = true;
-    protected byte[] _data = null;
-    
+    //protected int id = -1;
+    //protected boolean send = true;    
     public Packet() {
     }
     
@@ -47,7 +45,20 @@ public abstract class Packet {
                 return new PingPacket();
             case UPDATE:
                 return new UpdatePacket();
+            case GLOBALNOTIFICATION:
+                return new GlobalNotificationPacket();
+            case TEXT:
+                return new TextPacket();
+            case ALLYSHOOT:
+                return new AllyShootPacket();
+            case FAILURE:
+                return new FailurePacket();
+            case SHOWEFFECT:
+                return new ShowEffectPacket();
+            case NOTIFICATION:
+                return new NotificationPacket();
             default:
+                System.out.println("ERROR::Packet.java: Unable to create packet of type [" + pType.toString() + "]");
                 return null;
         } 
     }
