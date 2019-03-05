@@ -10,7 +10,9 @@ import javax.crypto.NoSuchPaddingException;
 
 public class RSA {
     javax.crypto.Cipher cipher = null;
-    private static final String key = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCKFctVrhfF3m2Kes0FBL/JFeOcmNg9eJz8k/hQy1kadD+XFUpluRqa//Uxp2s9W2qE0EoUCu59ugcf/p7lGuL99UoSGmQEynkBvZct+/M40L0E0rZ4BVgzLOJmIbXMp0J4PnPcb6VLZvxazGcmSfjauC7F3yWYqUbZd/HCBtawwIDAQAB";
+    private static final String key = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCKFctVrhfF3m2Kes0FBL/JFeOcmNg9eJz" + 
+                                      "8k/hQy1kadD+XFUpluRqa//Uxp2s9W2qE0EoUCu59ugcf/p7lGuL99UoSGmQEynkBvZct+/M" + 
+                                      "40L0E0rZ4BVgzLOJmIbXMp0J4PnPcb6VLZvxazGcmSfjauC7F3yWYqUbZd/HCBtawwIDAQAB";
     private java.security.PublicKey rsaPublicKey = null;
     
     public RSA() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeySpecException, InvalidKeyException {
@@ -22,6 +24,6 @@ public class RSA {
     }
     
     public String encrypt(String data) throws IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException {
-        return javax.xml.bind.DatatypeConverter.printBase64Binary(this.cipher.doFinal(data.getBytes()));
+        return javax.xml.bind.DatatypeConverter.printBase64Binary(this.cipher.doFinal(data.getBytes("UTF-8")));
     }
 }
