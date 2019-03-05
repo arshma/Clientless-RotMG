@@ -17,6 +17,7 @@ public class GameData {
     //Store XML documents in memory since accessors are slow.
     static{
         try {
+            System.out.println("NOTICE::GameData.java: Loading xml data...");
             javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
             javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
             rawPacketsXML = builder.parse(new java.io.BufferedInputStream(new java.io.FileInputStream("includes/res/packets.xml")));
