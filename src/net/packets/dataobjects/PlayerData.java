@@ -5,7 +5,7 @@ import net.packets.server.MapInfoPacket;
 import net.packets.server.NewTickPacket;
 import net.packets.server.UpdatePacket;
 import util.Constants.Classes;
-import util.Constants.ConditionEffects;
+import util.Constants.ConditionEffect;
 
 public class PlayerData {
     public int ownerObjectId;
@@ -163,7 +163,7 @@ public class PlayerData {
         else if (id == StatsType.Skin) this.skin = intValue;
     }
 
-    public boolean hasConditionEffect(ConditionEffects effect)
+    public boolean hasConditionEffect(ConditionEffect effect)
     {
         return (this.effects & effect.getVal()) != 0;
     }

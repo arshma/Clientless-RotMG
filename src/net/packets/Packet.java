@@ -57,6 +57,34 @@ public abstract class Packet {
                 return new ShowEffectPacket();
             case NOTIFICATION:
                 return new NotificationPacket();
+            case GOTO:
+                return new GotoPacket();
+            case GOTOACK:
+                return new GotoAckPacket();
+            case REQUESTTRADE:
+                return new RequestTradePacket();
+            case ACCEPTTRADE:
+                return new AcceptTradePacket();
+            case CHANGETRADE:
+                return new ChangeTradePacket();
+            case CANCELTRADE:
+                return new CancelTradePacket();
+            case SERVERPLAYERSHOOT:
+                return new ServerPlayerShootPacket();
+            case TRADESTART:
+                return new TradeStartPacket();
+            case TRADEREQUESTED:
+                return new TradeRequestedPacket();
+            case TRADECHANGED:
+                return new TradeChangedPacket();
+            case TRADEACCEPTED:
+                return new TradeAcceptedPacket();
+            case TRADEDONE:
+                return new TradeDonePacket();
+            case PLAYERTEXT:
+                return new PlayerTextPacket();
+            case DAMAGE:
+                return new DamagePacket();
             default:
                 System.out.println("ERROR::Packet.java: Unable to create packet of type [" + pType.toString() + "]");
                 return null;

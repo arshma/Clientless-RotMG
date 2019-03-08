@@ -1,7 +1,7 @@
 package gamedata.structs;
 
 public class ServerNode extends gamedata.structs.DataNode<String> implements java.lang.Comparable<ServerNode> {
-    //public String abbr;     //abbreviated name of the packet will id the server nodes.
+    public String abbr;     //abbreviated name of the packet will id the server nodes.
     public String ip;
     public static java.util.HashMap<String, String> abbreviations = new java.util.HashMap<>(25); 
     
@@ -35,7 +35,7 @@ public class ServerNode extends gamedata.structs.DataNode<String> implements jav
     public ServerNode(String name, String ip) {
         super(name, ServerNode.abbreviations.get(name));
         this.ip = ip;
-        //this.abbr = ServerNode.abbreviations.get(name);
+        this.abbr = ServerNode.abbreviations.get(name);
     }
             
     @Override
@@ -56,7 +56,7 @@ public class ServerNode extends gamedata.structs.DataNode<String> implements jav
         for(int i = 0; i < sElements.getLength(); i++) {
             String name = sElements.item(i).getChildNodes().item(1).getTextContent().trim();
             String ip = sElements.item(i).getChildNodes().item(3).getTextContent().trim();
-            map.put(ServerNode.abbreviations.get(name), new ServerNode(name, ip));
+            map.put(name, new ServerNode(name, ip));
         }
         return map;
     }

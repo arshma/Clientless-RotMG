@@ -35,7 +35,7 @@ public class GameData {
            @Override
            protected void compute() {
                GameData.packets = new GameDataMap<Byte, gamedata.structs.PacketNode>(gamedata.structs.PacketNode.load(rawPacketsXML));
-               //Custom packet reprenets unknown packet types.
+               //Custom packet represents unknown packet types.
                packets.map.put((byte)255, new gamedata.structs.PacketNode(net.packets.Packet.PacketType.UNKNOWN.toString(), 255, net.packets.Packet.PacketType.UNKNOWN));
            }
         });

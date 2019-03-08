@@ -6,7 +6,8 @@ import net.packets.PacketWriter;
 
 public class Constants {
     
-    public enum ConditionEffects {
+    //Condition effects stored as bits for filter masking.
+    public enum ConditionEffect {
         DEAD(1 << 0),
         QUIET(1 << 1),
         WEAK(1 << 2),
@@ -41,11 +42,20 @@ public class Constants {
         CURSE(1 << 31);
         
         private final int val;
-        private ConditionEffects(int val) {
+        private ConditionEffect(int val) {
             this.val = val;
         }
         public int getVal() {
             return this.val;
+        }
+        
+        public static ConditionEffect getConst(int val) {
+            for(ConditionEffect c : ConditionEffect.values()) {
+                if(c.val == val) {
+                    return c;
+                }
+            }
+            return null;
         }
     }
     
