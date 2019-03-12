@@ -2,9 +2,12 @@ package net;
 
 import crypto.RC4;
 import gamedata.GameData;
+import gamedata.structs.Account;
 import gamedata.structs.PacketNode;
+import gamedata.structs.ServerNode;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -33,19 +36,19 @@ public class Client {
     public boolean loggedin = false;
     public int errorId = -1;
     public String errorMsg = "";
-    public int charId = 85;
+    public int charId = 0;
     public int objectId;
     public Location position;// = new Location();
     public int currentTickTime = 0;
     public int lastTickTime = 0;
     public int lastTickId = 0;
     public int connectTime = 0;
-    public String connectedServerName = "USWest";
-    public String connectedServerIp = "13.57.254.131";
-    
+    public String connectedServerName = "UNKNOWN_SERVER_NAME";
+    public String connectedServerIp = "";
+    public int port = 2050;
+    public ServerNode connectedServer;
     //public String server = "ec2-13-57-254-131.us-west-1.compute.amazonaws.com";
     //public String server = "13.57.254.131";
-    public int port = 2050;
     
     public Client(Proxy proxy) {
         try {
@@ -55,23 +58,31 @@ public class Client {
             this.sendQueue = new ArrayList<Packet>(40);
             this.connectTime = (int)System.currentTimeMillis();
         } catch (Exception e) {
-            System.out.println("ERROR::Client2.java: Failed to create Client.");
+            System.out.println("ERROR::Client: Failed to create Client.");
             e.printStackTrace();
-            System.exit(-2);
         }
     }
     
-    public boolean connect(String server) {
+    public boolean connect(ServerNode sNode) {
+        if(sNode == null)
+            return false;
+        this.connectedServer = sNode;
+        this.connectedServerName = sNode.name;
+        return this.connect(sNode.ip);
+    }
+    
+    public boolean connect(String ip) {
         try {
             //this.serverConnection = new Socket(java.net.InetAddress.getByName(server), this.port);
             this.serverConnection = new Socket();
-            this.serverConnection.connect(new java.net.InetSocketAddress(java.net.Inet4Address.getByName(server), 2050));
+            this.serverConnection.connect(new java.net.InetSocketAddress(java.net.Inet4Address.getByName(ip), 2050));
             this.serverInputStream = new DataInputStream(this.serverConnection.getInputStream());
             this.serverOutputStream = new DataOutputStream(this.serverConnection.getOutputStream());
             this.running = true;
-            
+            this.connectedServerIp = ip;
             if(this.serverConnection.isConnected())
                 System.out.println("Connected to the server...");
+            
             //Create thread for sending.
             this.sendThread = new Thread(new Runnable() {
                 @Override
@@ -105,13 +116,15 @@ public class Client {
                         }
                     } catch(IOException e) {
                         System.out.println("ERROR::Client: Unable to receive packet in receive thead.");
-                        //Client.this.disconnect();
+                        e.printStackTrace();
                     }                    
                 }
             });
+            
             this.sendThread.start();
             this.receiveThead.start();           
         } catch(Exception e) {
+            System.out.println("ERROR:Client: Unable to connect to the server.");
             e.printStackTrace();
             return false;
         }
@@ -135,11 +148,56 @@ public class Client {
             this.connectedServerIp = "";
             this.errorId = -1;
             this.errorMsg = "";
-            System.out.println("NOTICE::Client.java: Client disconnected.");
+            System.out.println("NOTICE::Client: Client disconnected.");
         } catch(Exception e) {
             System.out.println("ERROR::Client: Failed to disconnect client.");
             e.printStackTrace();
         }
+    }
+    
+    public boolean login(Account acc) throws FileNotFoundException, IOException {
+        try {
+            //If not first time login...check for file with char ids.
+            String path = "/" + acc.guid + ".acc";
+            java.io.File accFile = new java.io.File(path);
+            if(accFile.exists()) {
+                GameData.charIds = new ArrayList<Integer>(10);
+                java.io.DataInputStream in = new java.io.DataInputStream(new java.io.BufferedInputStream(new java.io.FileInputStream(accFile)));
+                while(in.available() > 0) {
+                    GameData.charIds.add(in.readInt());
+                }
+                in.close();
+            } else {
+                GameData.loadCharIds(acc);
+                java.io.DataOutputStream out = new java.io.DataOutputStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(path)));
+                for(int i : GameData.charIds) {
+                    out.writeInt(i);
+                }
+                out.close();
+            }
+            
+            net.packets.client.HelloPacket hp = new net.packets.client.HelloPacket();
+            hp.buildVersion = "X31.3.1";
+            hp.gameId = -2;
+            hp.guid = new crypto.RSA().encrypt(acc.guid);
+            hp.random1 = (int)Math.floor(Math.random()*1000000000);
+            hp.password = new crypto.RSA().encrypt(acc.password);
+            hp.random2 = (int)Math.floor(Math.random()*1000000000);
+            hp.secret = "";
+            hp.keyTime = -1;
+            hp.key = new byte[0];
+            hp.mapJson = "";
+            hp.entryTag = "";
+            hp.gameNet = "rotmg";
+            hp.gameNetUserId = "";
+            hp.playPlatform = "rotmg";
+            hp.platformToken = "";
+            hp.userToken = "";
+        } catch (Exception e) {
+            System.out.println("ERROR::Client: Unable to login.");
+            e.printStackTrace();
+        }
+        return true;
     }
     
     public boolean isLoggedIn() {
