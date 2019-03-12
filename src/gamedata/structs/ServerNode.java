@@ -28,12 +28,11 @@ public class ServerNode extends gamedata.structs.DataNode<String> implements jav
         abbreviations.put("EUSouth", "EUS");
         abbreviations.put("USSouth2", "USS2");
         abbreviations.put("USWest3", "USW3");
-        abbreviations.put("Australia", "AUS");
-        
+        abbreviations.put("Australia", "AUS");        
     }
     
     public ServerNode(String name, String ip) {
-        super(name, ServerNode.abbreviations.get(name));
+        super(name, ip);
         this.ip = ip;
         this.abbr = ServerNode.abbreviations.get(name);
     }
