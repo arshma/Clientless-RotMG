@@ -7,7 +7,6 @@ import gamedata.structs.PacketNode;
 import gamedata.structs.ServerNode;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -19,8 +18,8 @@ import net.packets.PacketWriter;
 import net.packets.dataobjects.Location;
 
 public class Client {
-    private static final String key0 = "6a39570cc9de4ec71d64821894";  //outgoing encoding.
-    private static final String key1 = "c79332b197f92ba85ed281a023";  //incoming decoding.
+    //private static final String key0 = "6a39570cc9de4ec71d64821894";  //outgoing encoding.
+    //private static final String key1 = "c79332b197f92ba85ed281a023";  //incoming decoding.
     private RC4 cipherSendServer;
     private RC4 cipherReceiveServer;
     private java.net.Socket serverConnection;
@@ -36,8 +35,8 @@ public class Client {
     public boolean loggedin = false;
     public int errorId = -1;
     public String errorMsg = "";
-    public int charId = 0;
-    public int objectId;
+    public int charId = -1;
+    public int objectId = -1;
     public Location position;// = new Location();
     public int currentTickTime = 0;
     public int lastTickTime = 0;
@@ -52,11 +51,11 @@ public class Client {
     
     public Client(Proxy proxy) {
         try {
-            this.cipherSendServer = new RC4(key0);
-            this.cipherReceiveServer = new RC4(key1);
+            this.cipherSendServer = new RC4(GameData.keyOut);
+            this.cipherReceiveServer = new RC4(GameData.keyIn);
             this.proxy = proxy;
             this.sendQueue = new ArrayList<Packet>(40);
-            this.connectTime = (int)System.currentTimeMillis();
+            //this.connectTime = (int)System.currentTimeMillis();
         } catch (Exception e) {
             System.out.println("ERROR::Client: Failed to create Client.");
             e.printStackTrace();
@@ -82,6 +81,7 @@ public class Client {
             this.connectedServerIp = ip;
             if(this.serverConnection.isConnected())
                 System.out.println("Connected to the server...");
+            this.connectTime = (int)System.currentTimeMillis();
             
             //Create thread for sending.
             this.sendThread = new Thread(new Runnable() {
@@ -148,6 +148,13 @@ public class Client {
             this.connectedServerIp = "";
             this.errorId = -1;
             this.errorMsg = "";
+            this.charId = -1;
+            this.objectId = -1;
+            this.currentTickTime = 0;
+            this.lastTickTime = 0;
+            this.lastTickId = 0;
+            this.connectTime = 0;
+            this.position = null;
             System.out.println("NOTICE::Client: Client disconnected.");
         } catch(Exception e) {
             System.out.println("ERROR::Client: Failed to disconnect client.");
@@ -155,49 +162,79 @@ public class Client {
         }
     }
     
-    public boolean login(Account acc) throws FileNotFoundException, IOException {
-        try {
-            //If not first time login...check for file with char ids.
-            String path = "/" + acc.guid + ".acc";
-            java.io.File accFile = new java.io.File(path);
-            if(accFile.exists()) {
-                GameData.charIds = new ArrayList<Integer>(10);
-                java.io.DataInputStream in = new java.io.DataInputStream(new java.io.BufferedInputStream(new java.io.FileInputStream(accFile)));
-                while(in.available() > 0) {
-                    GameData.charIds.add(in.readInt());
+    //Note: acc.charId > 0 => use id specified in param account 
+    //      acc.charId < 0 => load ids from server
+    //      acc.charid == 0 => create new char
+    public boolean login(Account acc) throws Exception {
+        Thread loginTask = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if(acc.charId < 0) {
+                        String path = "" + acc.guid + ".acc";
+                        java.io.File accFile = new java.io.File(path);
+
+                        if(accFile.exists()) {
+                            GameData.charIds = new ArrayList<Integer>(10);
+                            java.io.DataInputStream in = new java.io.DataInputStream(new java.io.BufferedInputStream(new java.io.FileInputStream(path)));
+                            while(in.available() > 0) {
+                                GameData.charIds.add(in.readInt());
+                            }
+                            in.close();
+                        } else {
+                            GameData.loadCharIds(acc);
+                            java.io.DataOutputStream out = new java.io.DataOutputStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(path)));
+                            for(int i : GameData.charIds) {
+                                out.writeInt(i);
+                            }
+                            out.close();
+                        }
+                        if(GameData.charIds.size() < 1) {
+                            throw new Exception();
+                        }
+                        //Client will login first char on list.
+                        Client.this.charId = GameData.charIds.get(0);
+                    } else if(acc.charId > 0) {
+                        Client.this.charId = acc.charId;
+                    }
+                    
+                    net.packets.client.HelloPacket hp = new net.packets.client.HelloPacket();
+                    hp.buildVersion = GameData.gameVersion;
+                    hp.gameId = -2;
+                    hp.guid = new crypto.RSA().encrypt(acc.guid);
+                    hp.random1 = (int)Math.floor(Math.random()*1000000000);
+                    hp.password = new crypto.RSA().encrypt(acc.password);
+                    hp.random2 = (int)Math.floor(Math.random()*1000000000);
+                    hp.secret = "";
+                    hp.keyTime = -1;
+                    hp.key = new byte[0];
+                    hp.mapJson = "";
+                    hp.entryTag = "";
+                    hp.gameNet = "rotmg";
+                    hp.gameNetUserId = "";
+                    hp.playPlatform = "rotmg";
+                    hp.platformToken = "";
+                    hp.userToken = "";
+
+                    Client.this.sendQueue.add(hp);
+
+                    int time = 0;
+                    while(!Client.this.loggedin) {
+                        if(time > 10000) {
+                            return; //throw new Exception("Email or password is invalid.");
+                        }
+                        time += 200;
+                        Thread.sleep(200);
+                    }            
+                } catch (Exception e) {
+                    System.out.println("ERROR::Client: Unable to login.");
+                    e.printStackTrace();
                 }
-                in.close();
-            } else {
-                GameData.loadCharIds(acc);
-                java.io.DataOutputStream out = new java.io.DataOutputStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(path)));
-                for(int i : GameData.charIds) {
-                    out.writeInt(i);
-                }
-                out.close();
             }
-            
-            net.packets.client.HelloPacket hp = new net.packets.client.HelloPacket();
-            hp.buildVersion = "X31.3.1";
-            hp.gameId = -2;
-            hp.guid = new crypto.RSA().encrypt(acc.guid);
-            hp.random1 = (int)Math.floor(Math.random()*1000000000);
-            hp.password = new crypto.RSA().encrypt(acc.password);
-            hp.random2 = (int)Math.floor(Math.random()*1000000000);
-            hp.secret = "";
-            hp.keyTime = -1;
-            hp.key = new byte[0];
-            hp.mapJson = "";
-            hp.entryTag = "";
-            hp.gameNet = "rotmg";
-            hp.gameNetUserId = "";
-            hp.playPlatform = "rotmg";
-            hp.platformToken = "";
-            hp.userToken = "";
-        } catch (Exception e) {
-            System.out.println("ERROR::Client: Unable to login.");
-            e.printStackTrace();
-        }
-        return true;
+        });
+        loginTask.start();
+        loginTask.join();
+        return this.loggedin;
     }
     
     public boolean isLoggedIn() {
