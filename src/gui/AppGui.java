@@ -1,16 +1,8 @@
 package gui;
 
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
+import gamedata.structs.Account;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 
 public class AppGui extends javax.swing.JFrame {
 
@@ -55,6 +47,8 @@ public class AppGui extends javax.swing.JFrame {
         jScrollPane4 = new javax.swing.JScrollPane();
         jList3 = new javax.swing.JList();
         jCheckBox1 = new javax.swing.JCheckBox();
+        jLabel8 = new javax.swing.JLabel();
+        charIdField = new javax.swing.JTextField();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
@@ -82,6 +76,7 @@ public class AppGui extends javax.swing.JFrame {
         jLabel1.setText("Email:");
 
         emailField.setToolTipText("Account login email.");
+        emailField.setDoubleBuffered(true);
         emailField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 emailFieldActionPerformed(evt);
@@ -106,6 +101,7 @@ public class AppGui extends javax.swing.JFrame {
         jLabel4.setText("Trade Player: ");
         jLabel4.setToolTipText("Name of the player to trade with.");
 
+        tradeNameField.setDoubleBuffered(true);
         tradeNameField.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 tradeNameFieldActionPerformed(evt);
@@ -120,14 +116,10 @@ public class AppGui extends javax.swing.JFrame {
             }
         });
 
+        serverComboBox.setDoubleBuffered(true);
         serverComboBox.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
                 serverComboBoxItemStateChanged(evt);
-            }
-        });
-        serverComboBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                serverComboBoxActionPerformed(evt);
             }
         });
 
@@ -144,14 +136,21 @@ public class AppGui extends javax.swing.JFrame {
 
         jLabel6.setText("Accounts:");
 
+        jList2.setDoubleBuffered(true);
         jScrollPane3.setViewportView(jList2);
 
         jLabel7.setText("Inventory:");
 
+        jList3.setDoubleBuffered(true);
         jScrollPane4.setViewportView(jList3);
 
         jCheckBox1.setText("Enable Vaulting");
         jCheckBox1.setToolTipText("Deposit items in the vault when inventory is full (if enough space in vault).");
+
+        jLabel8.setText("Char ID:");
+
+        charIdField.setToolTipText("(Optional) Id of character to login with. If not provided, log in with oldest char created.");
+        charIdField.setDoubleBuffered(true);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -162,74 +161,92 @@ public class AppGui extends javax.swing.JFrame {
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane2)
                     .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jLabel5)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 285, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel6)
+                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                .addGroup(jPanel1Layout.createSequentialGroup()
+                                    .addComponent(jLabel1)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, 177, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(jPanel1Layout.createSequentialGroup()
+                                    .addComponent(jLabel3)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                    .addComponent(serverComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 177, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGap(0, 44, Short.MAX_VALUE)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 285, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel6)
-                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                        .addGroup(jPanel1Layout.createSequentialGroup()
-                                            .addComponent(jLabel1)
-                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                            .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, 177, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addGroup(jPanel1Layout.createSequentialGroup()
-                                            .addComponent(jLabel3)
-                                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                            .addComponent(serverComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, 177, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                                .addGap(6, 6, 6)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addComponent(jLabel7)
+                                    .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 285, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(jPanel1Layout.createSequentialGroup()
-                                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(jLabel4)
-                                            .addComponent(jLabel2))
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                            .addComponent(tradeNameField)
-                                            .addComponent(passField, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addGap(18, 18, 18)
-                                        .addComponent(btnLogin, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(jLabel7)
-                                        .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 285, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addGap(47, 47, 47)
+                                        .addGap(47, 47, 47)
+                                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(jPanel1Layout.createSequentialGroup()
+                                        .addGap(31, 31, 31)
+                                        .addComponent(jCheckBox1))))
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jCheckBox1)
-                                    .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                            .addComponent(jLabel5))
-                        .addGap(0, 5, Short.MAX_VALUE)))
+                                    .addComponent(jLabel4)
+                                    .addComponent(jLabel2))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(tradeNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addGroup(jPanel1Layout.createSequentialGroup()
+                                        .addComponent(passField, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(18, 18, 18)
+                                        .addComponent(jLabel8)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                        .addComponent(charIdField, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(btnLogin, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)))))))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel2)
-                    .addComponent(passField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnLogin)
-                    .addComponent(jCheckBox1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel3)
-                        .addComponent(serverComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(tradeNameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(jLabel4)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel7)
-                    .addComponent(jLabel6))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 107, Short.MAX_VALUE)
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(26, 26, 26)
+                        .addContainerGap()
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(jLabel1)
+                                    .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel2))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jLabel3)
+                                        .addComponent(serverComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addComponent(jLabel4)))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(passField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel8)
+                                    .addComponent(charIdField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(btnLogin))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(tradeNameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jLabel7)
+                            .addComponent(jLabel6))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 107, Short.MAX_VALUE)
+                            .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(92, 92, 92)
+                        .addComponent(jCheckBox1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 59, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addGap(0, 22, Short.MAX_VALUE)))
                 .addGap(23, 23, 23)
                 .addComponent(jLabel5)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -321,6 +338,24 @@ public class AppGui extends javax.swing.JFrame {
         logArea.append("Account mules list reloaded.\n"); 
     }//GEN-LAST:event_jMenuItem3ActionPerformed
 
+    private void serverComboBoxItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_serverComboBoxItemStateChanged
+        workerPool.execute(new Runnable() {
+            @Override
+            public void run() {
+
+                if(evt.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
+                    gamedata.structs.ServerNode sNode = gamedata.GameData.servers.byName((String)evt.getItem());
+                    if(sNode == null) {
+                        AppGui.this.logArea.append("Unable to change to server [" + (String)evt.getItem() + "].");
+                    } else {
+                        AppGui.this.server = sNode;
+                    }
+
+                }
+            }
+        });
+    }//GEN-LAST:event_serverComboBoxItemStateChanged
+
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         logArea.append("Sending trade request to player.\n");
     }//GEN-LAST:event_jButton2ActionPerformed
@@ -330,7 +365,7 @@ public class AppGui extends javax.swing.JFrame {
     }//GEN-LAST:event_tradeNameFieldActionPerformed
 
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
-        
+
         //Free up EDT
         this.workerPool.execute(new Runnable() {
             @Override
@@ -338,56 +373,41 @@ public class AppGui extends javax.swing.JFrame {
                 if(AppGui.this.loggedin) {
                     AppGui.this.logoff();
                 } else {
-                    try {                                         
+                    try {
                         //extract email and password for logging in.
                         AppGui.this.email = AppGui.this.emailField.getText();
                         AppGui.this.password = new String(AppGui.this.passField.getPassword());
+                        String charIdText = AppGui.this.charIdField.getText();
+                        if(!charIdText.equals("")) {
+                            AppGui.this.charId = Integer.parseInt(charIdText);
+                        } else {
+                            AppGui.this.charId = -1;
+                        }
 
-                        net.packets.client.HelloPacket hp = new net.packets.client.HelloPacket();
-                        hp.buildVersion = "X31.3.1";
-                        hp.gameId = -2;
-                        hp.guid = new crypto.RSA().encrypt(AppGui.this.email);
-                        hp.random1 = (int)Math.floor(Math.random()*1000000000);
-                        hp.password = new crypto.RSA().encrypt(AppGui.this.password);
-                        hp.random2 = (int)Math.floor(Math.random()*1000000000);
-                        hp.secret = "";
-                        hp.keyTime = -1;
-                        hp.key = new byte[0];
-                        hp.mapJson = "";
-                        hp.entryTag = "";
-                        hp.gameNet = "rotmg";
-                        hp.gameNetUserId = "";
-                        hp.playPlatform = "rotmg";
-                        hp.platformToken = "";
-                        hp.userToken = "";
-                        
-                        AppGui.this.logArea.append("Attempting to connect to server" + "" + System.lineSeparator());
+                        AppGui.this.logArea.append("Attempting to connect to server" + "" + newLine);
                         if(!AppGui.this.client.connect(AppGui.this.server)) {
                             throw new java.net.ConnectException();
                         }
-                        AppGui.this.client.sendQueue.add(hp);
-                        int time = 0;
-                        while(!AppGui.this.client.isLoggedIn()) {
-                            if(time > 10000) {
-                                throw new Exception("Email or password is invalid.");                                
-                            }
-                            time += 200;
-                            Thread.sleep(200);                            
-                        }
                         
+                        AppGui.this.logArea.append("Attempting to login..." + newLine);
+                        if(!AppGui.this.client.login(new gamedata.structs.Account(AppGui.this.email, AppGui.this.password, AppGui.this.charId))) {
+                            throw new Exception("Email or password is invalid.");
+                        }
+
                         AppGui.this.loggedin = true;
-                        AppGui.this.logArea.append("Successfuly connected to server[" + AppGui.this.client.connectedServerName + "]" + System.lineSeparator());
+                        AppGui.this.logArea.append("Successfuly connected to server [" + AppGui.this.server.name + "]" + newLine);
                         AppGui.this.setTitle(AppGui.this.getTitle() + " - " + AppGui.this.email);
                         AppGui.this.btnLogin.setText("Logout");
 
                     } catch(java.net.ConnectException e) {
-                        AppGui.this.logArea.append("Unable to connect client to server. Check if client is up to date." + System.lineSeparator());
-                    }
-                    catch (Exception e) {
+                        AppGui.this.logArea.append("Unable to connect to server. Check if client is up to date." + newLine);
+                    } catch(java.lang.NumberFormatException e) {
+                        AppGui.this.logArea.append("Character ID is invalid.");
+                    } catch (Exception e) {
                         String errMsg = "Unable to login.";
                         if(e.getMessage() != null) {
-                            errMsg += " " + e.getMessage() + System.lineSeparator();
-                        }                     
+                            errMsg += " " + e.getMessage() + newLine;
+                        }
                         AppGui.this.logArea.append(errMsg);
                         //safely dispose of the connection.
                         if(AppGui.this.client.isConnected()) {
@@ -396,34 +416,12 @@ public class AppGui extends javax.swing.JFrame {
                     }
                 }
             }
-        });        
+        });
     }//GEN-LAST:event_btnLoginActionPerformed
 
     private void emailFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_emailFieldActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_emailFieldActionPerformed
-
-    private void serverComboBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_serverComboBoxActionPerformed
-        
-    }//GEN-LAST:event_serverComboBoxActionPerformed
-
-    private void serverComboBoxItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_serverComboBoxItemStateChanged
-        workerPool.execute(new Runnable() {
-            @Override
-            public void run() {
-                
-                if(evt.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
-                    gamedata.structs.ServerNode sNode = gamedata.GameData.servers.byName((String)evt.getItem());
-                    if(sNode == null) {
-                        AppGui.this.logArea.append("Unable to change to server [" + (String)evt.getItem() + "].");
-                    } else {
-                        AppGui.this.server = sNode.ip;
-                    }
-
-                }
-            }
-        });
-    }//GEN-LAST:event_serverComboBoxItemStateChanged
     
     /*
     /**
@@ -456,6 +454,8 @@ public class AppGui extends javax.swing.JFrame {
         //</editor-fold>
         //</editor-fold>
         
+        
+        
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
@@ -466,6 +466,21 @@ public class AppGui extends javax.swing.JFrame {
                 mainWin.setVisible(true);
             }
         });
+        
+        //Clean up char id files at end from current dir
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                java.io.File cleanupFiles = new java.io.File("./");
+                System.out.println("Dir: " + cleanupFiles.isDirectory() + ", " + cleanupFiles.getAbsolutePath());
+                for(java.io.File f : cleanupFiles.listFiles()) {
+                    if(f.getName().contains(".acc")) {
+                        //System.out.println(f.getName());
+                        f.delete();
+                    }
+                }
+            }
+        }));
     }
     
     //ROTMG variables
@@ -475,9 +490,11 @@ public class AppGui extends javax.swing.JFrame {
     private listeners.Proxy proxy;
     private String email;
     private String password;
-    private String server;
-    private java.util.concurrent.ExecutorService workerPool = java.util.concurrent.Executors.newFixedThreadPool(1);
+    private int charId;
+    private gamedata.structs.ServerNode server;
     private ArrayList<String> serverList;
+    private java.util.concurrent.ExecutorService workerPool = java.util.concurrent.Executors.newFixedThreadPool(1);
+    private String newLine = System.lineSeparator();
     
     //Action to perfrom when logging off from a client.
     private void logoff() {
@@ -486,7 +503,7 @@ public class AppGui extends javax.swing.JFrame {
         this.loggedin = false;
         this.setTitle(this.defaultTitle);
         this.btnLogin.setText("Login");
-        this.logArea.append("Disconnecting from server..." + System.lineSeparator());
+        this.logArea.append("Disconnecting from server..." + newLine);
     }
     
     //Prepares static game data.
@@ -496,30 +513,34 @@ public class AppGui extends javax.swing.JFrame {
             @Override
             public void run() {
                 try {
-                    AppGui.this.logArea.append("Loading game xmls..." + System.lineSeparator());
+                    AppGui.this.logArea.append("Loading game xmls..." + newLine);
                     gamedata.GameData.load();
 
-                    AppGui.this.logArea.append("Initializing network listeners..." + System.lineSeparator());
+                    AppGui.this.logArea.append("Initializing network listeners..." + newLine);
                     AppGui.this.proxy = new listeners.Proxy();
                     
-                    AppGui.this.logArea.append("Loading server list..." + System.lineSeparator());
+                    AppGui.this.logArea.append("Loading server list..." + newLine);
                     AppGui.this.serverList = new ArrayList<String>(gamedata.structs.ServerNode.abbreviations.keySet());
                     Collections.sort(AppGui.this.serverList);
-                    //create new model for already created server comboboxe
+                    //create new model for already created server combobox
                     AppGui.this.serverComboBox.setModel(new javax.swing.DefaultComboBoxModel(AppGui.this.serverList.toArray()));
                     AppGui.this.serverComboBox.setSelectedItem("USWest");
                     gamedata.structs.ServerNode sNode = gamedata.GameData.servers.byName("USWest");
                     if(sNode == null) {
-                        AppGui.this.logArea.append("Unable to change to server [USWest].");
+                        AppGui.this.logArea.append("Unable select server [USWest].");
                     } else {
-                        AppGui.this.server = sNode.ip;
+                        AppGui.this.server = sNode;
                     }
 
-                    AppGui.this.logArea.append("Initializing game client..." + System.lineSeparator());
+                    AppGui.this.logArea.append("Initializing game client..." + newLine);
                     AppGui.this.client = new net.Client(proxy);
                     
                 }catch(Exception e) {
-                    AppGui.this.logArea.append("Unable to initialize client..." + System.lineSeparator());
+                    AppGui.this.logArea.append("Unable to initialize client..." + newLine);
+                    AppGui.this.btnLogin.setEnabled(false);
+                    for(StackTraceElement ste : e.getStackTrace()) {
+                        AppGui.this.logArea.append(ste.toString() + newLine);
+                    }
                 }
             }
         });
@@ -527,6 +548,7 @@ public class AppGui extends javax.swing.JFrame {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLogin;
+    private javax.swing.JTextField charIdField;
     private javax.swing.JTextField emailField;
     private javax.swing.Box.Filler filler1;
     private javax.swing.JButton jButton2;
@@ -538,6 +560,7 @@ public class AppGui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
     private javax.swing.JList jList2;
     private javax.swing.JList jList3;
     private javax.swing.JMenu jMenu1;
