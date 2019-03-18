@@ -3,6 +3,12 @@ package gui;
 import gamedata.structs.Account;
 import java.util.ArrayList;
 import java.util.Collections;
+import listeners.PacketListener;
+import net.Client;
+import net.packets.Packet;
+import net.packets.dataobjects.Entity;
+import net.packets.dataobjects.StatData;
+import net.packets.server.UpdatePacket;
 
 public class AppGui extends javax.swing.JFrame {
 
@@ -45,7 +51,7 @@ public class AppGui extends javax.swing.JFrame {
         jList2 = new javax.swing.JList();
         jLabel7 = new javax.swing.JLabel();
         jScrollPane4 = new javax.swing.JScrollPane();
-        jList3 = new javax.swing.JList();
+        invList = new javax.swing.JList();
         jCheckBox1 = new javax.swing.JCheckBox();
         jLabel8 = new javax.swing.JLabel();
         charIdField = new javax.swing.JTextField();
@@ -95,6 +101,7 @@ public class AppGui extends javax.swing.JFrame {
                 btnLoginActionPerformed(evt);
             }
         });
+        btnLogin.setEnabled(false);
 
         jLabel3.setText("Server: ");
 
@@ -141,8 +148,8 @@ public class AppGui extends javax.swing.JFrame {
 
         jLabel7.setText("Inventory:");
 
-        jList3.setDoubleBuffered(true);
-        jScrollPane4.setViewportView(jList3);
+        invList.setDoubleBuffered(true);
+        jScrollPane4.setViewportView(invList);
 
         jCheckBox1.setText("Enable Vaulting");
         jCheckBox1.setToolTipText("Deposit items in the vault when inventory is full (if enough space in vault).");
@@ -398,6 +405,21 @@ public class AppGui extends javax.swing.JFrame {
                         AppGui.this.logArea.append("Successfuly connected to server [" + AppGui.this.server.name + "]" + newLine);
                         AppGui.this.setTitle(AppGui.this.getTitle() + " - " + AppGui.this.email);
                         AppGui.this.btnLogin.setText("Logout");
+                        
+                        //refresh item list after logging into the game
+                        javax.swing.DefaultListModel<String> listModel = new javax.swing.DefaultListModel<String>();
+                        System.out.println("Vault chests size: " + client.vaultChests.size());
+                        if(AppGui.this.client.vaultChests.size() > 0) {
+                            for(java.util.Map.Entry<Integer, ArrayList<String>> entry : client.vaultChests.entrySet()) {
+                                listModel.addElement("Chest #" + entry.getKey());
+                                for(String itemName : entry.getValue()) {
+                                    listModel.addElement("     " + itemName);
+                                }
+                            }
+                        }
+                        AppGui.this.invList.setModel(listModel);
+                        AppGui.this.invList.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+                        
 
                     } catch(java.net.ConnectException e) {
                         AppGui.this.logArea.append("Unable to connect to server. Check if client is up to date." + newLine);
@@ -535,12 +557,16 @@ public class AppGui extends javax.swing.JFrame {
                     AppGui.this.logArea.append("Initializing game client..." + newLine);
                     AppGui.this.client = new net.Client(proxy);
                     
+                    AppGui.this.btnLogin.setEnabled(true);
+                    
                 }catch(Exception e) {
                     AppGui.this.logArea.append("Unable to initialize client..." + newLine);
                     AppGui.this.btnLogin.setEnabled(false);
+                    AppGui.this.logArea.setForeground(java.awt.Color.RED);
                     for(StackTraceElement ste : e.getStackTrace()) {
                         AppGui.this.logArea.append(ste.toString() + newLine);
                     }
+                    AppGui.this.logArea.setForeground(java.awt.Color.BLACK);
                 }
             }
         });
@@ -551,6 +577,7 @@ public class AppGui extends javax.swing.JFrame {
     private javax.swing.JTextField charIdField;
     private javax.swing.JTextField emailField;
     private javax.swing.Box.Filler filler1;
+    private javax.swing.JList invList;
     private javax.swing.JButton jButton2;
     private javax.swing.JCheckBox jCheckBox1;
     private javax.swing.JLabel jLabel1;
@@ -562,7 +589,6 @@ public class AppGui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JList jList2;
-    private javax.swing.JList jList3;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
