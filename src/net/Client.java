@@ -10,6 +10,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import listeners.Proxy;
 import net.packets.Packet;
@@ -48,6 +49,8 @@ public class Client {
     public ServerNode connectedServer;
     //public String server = "ec2-13-57-254-131.us-west-1.compute.amazonaws.com";
     //public String server = "13.57.254.131";
+    
+    public HashMap<Integer, ArrayList<String>> vaultChests = new HashMap<>(5);
     
     public Client(Proxy proxy) {
         try {
@@ -144,7 +147,7 @@ public class Client {
             this.cipherSendServer.reset();
             this.cipherReceiveServer.reset();
             this.sendQueue.clear();
-            this.connectedServerName = "";
+            this.connectedServerName = "UNKNOWN_SERVER_NAME";
             this.connectedServerIp = "";
             this.errorId = -1;
             this.errorMsg = "";
@@ -155,6 +158,7 @@ public class Client {
             this.lastTickId = 0;
             this.connectTime = 0;
             this.position = null;
+            this.vaultChests.clear();       //feature under testing
             System.out.println("NOTICE::Client: Client disconnected.");
         } catch(Exception e) {
             System.out.println("ERROR::Client: Failed to disconnect client.");
@@ -200,7 +204,7 @@ public class Client {
                     
                     net.packets.client.HelloPacket hp = new net.packets.client.HelloPacket();
                     hp.buildVersion = GameData.gameVersion;
-                    hp.gameId = -2;
+                    hp.gameId = -5;
                     hp.guid = new crypto.RSA().encrypt(acc.guid);
                     hp.random1 = (int)Math.floor(Math.random()*1000000000);
                     hp.password = new crypto.RSA().encrypt(acc.password);
