@@ -3,6 +3,12 @@ package gui;
 import gamedata.structs.Account;
 import java.util.ArrayList;
 import java.util.Collections;
+import listeners.PacketListener;
+import net.Client;
+import net.packets.Packet;
+import net.packets.dataobjects.Entity;
+import net.packets.dataobjects.StatData;
+import net.packets.server.UpdatePacket;
 
 public class AppGui extends javax.swing.JFrame {
 
@@ -45,7 +51,7 @@ public class AppGui extends javax.swing.JFrame {
         jList2 = new javax.swing.JList();
         jLabel7 = new javax.swing.JLabel();
         jScrollPane4 = new javax.swing.JScrollPane();
-        jList3 = new javax.swing.JList();
+        invList = new javax.swing.JList();
         jCheckBox1 = new javax.swing.JCheckBox();
         jLabel8 = new javax.swing.JLabel();
         charIdField = new javax.swing.JTextField();
@@ -141,16 +147,19 @@ public class AppGui extends javax.swing.JFrame {
 
         jLabel7.setText("Inventory:");
 
-        jList3.setDoubleBuffered(true);
-        jScrollPane4.setViewportView(jList3);
+        invList.setDoubleBuffered(true);
+        invList.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        jScrollPane4.setViewportView(invList);
 
         jCheckBox1.setText("Enable Vaulting");
         jCheckBox1.setToolTipText("Deposit items in the vault when inventory is full (if enough space in vault).");
 
         jLabel8.setText("Char ID:");
 
-        charIdField.setToolTipText("(Optional) Id of character to login with. If not provided, log in with recently used.");
+        charIdField.setToolTipText("(Optional) Id of character to login with. If not provided, log in with oldest char created.");
         charIdField.setDoubleBuffered(true);
+
+        btnLogin.setEnabled(false);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -374,13 +383,14 @@ public class AppGui extends javax.swing.JFrame {
                     AppGui.this.logoff();
                 } else {
                     try {
-                        //extract email and password for logging in.
                         AppGui.this.email = AppGui.this.emailField.getText();
                         AppGui.this.password = new String(AppGui.this.passField.getPassword());
-                        String test = new String(AppGui.this.charIdField.getText());
-                        System.out.println("char id: [" + test + "]");
-                        AppGui.this.charId = Integer.parseInt(test);
-                        System.out.println("charId: " + AppGui.this.charId);
+                        String charIdText = AppGui.this.charIdField.getText();
+                        if(!charIdText.equals("")) {
+                            AppGui.this.charId = Integer.parseInt(charIdText);
+                        } else {
+                            AppGui.this.charId = -1;
+                        }
 
                         AppGui.this.logArea.append("Attempting to connect to server" + "" + newLine);
                         if(!AppGui.this.client.connect(AppGui.this.server)) {
@@ -388,17 +398,17 @@ public class AppGui extends javax.swing.JFrame {
                         }
                         
                         AppGui.this.logArea.append("Attempting to login..." + newLine);
-                        if(!AppGui.this.client.login(new gamedata.structs.Account(AppGui.this.email, AppGui.this.password))) {
+                        if(!AppGui.this.client.login(new gamedata.structs.Account(AppGui.this.email, AppGui.this.password, AppGui.this.charId))) {
                             throw new Exception("Email or password is invalid.");
                         }
 
                         AppGui.this.loggedin = true;
-                        AppGui.this.logArea.append("Successfuly connected to server[" + AppGui.this.server.name + "]" + newLine);
+                        AppGui.this.logArea.append("Successfuly connected to server [" + AppGui.this.server.name + "]" + newLine);
                         AppGui.this.setTitle(AppGui.this.getTitle() + " - " + AppGui.this.email);
                         AppGui.this.btnLogin.setText("Logout");
-
+                        
                     } catch(java.net.ConnectException e) {
-                        AppGui.this.logArea.append("Unable to connect client to server. Check if client is up to date." + newLine);
+                        AppGui.this.logArea.append("Unable to connect to server. Check if client is up to date." + newLine);
                     } catch(java.lang.NumberFormatException e) {
                         AppGui.this.logArea.append("Character ID is invalid.");
                     } catch (Exception e) {
@@ -464,6 +474,21 @@ public class AppGui extends javax.swing.JFrame {
                 mainWin.setVisible(true);
             }
         });
+        
+        //Clean up char id files at end from current dir
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                java.io.File cleanupFiles = new java.io.File("./");
+                System.out.println("Dir: " + cleanupFiles.isDirectory() + ", " + cleanupFiles.getAbsolutePath());
+                for(java.io.File f : cleanupFiles.listFiles()) {
+                    if(f.getName().contains(".acc")) {
+                        //System.out.println(f.getName());
+                        f.delete();
+                    }
+                }
+            }
+        }));
     }
     
     //ROTMG variables
@@ -475,8 +500,8 @@ public class AppGui extends javax.swing.JFrame {
     private String password;
     private int charId;
     private gamedata.structs.ServerNode server;
-    private java.util.concurrent.ExecutorService workerPool = java.util.concurrent.Executors.newFixedThreadPool(1);
     private ArrayList<String> serverList;
+    private java.util.concurrent.ExecutorService workerPool = java.util.concurrent.Executors.newFixedThreadPool(1);
     private String newLine = System.lineSeparator();
     
     //Action to perfrom when logging off from a client.
@@ -518,12 +543,42 @@ public class AppGui extends javax.swing.JFrame {
                     AppGui.this.logArea.append("Initializing game client..." + newLine);
                     AppGui.this.client = new net.Client(proxy);
                     
-                }catch(Exception e) {
+                    AppGui.this.btnLogin.setEnabled(true);
+                    
+                    //Listener that detects item list change via 'Update' and 'NewTick' packets.
+                    PacketListener listUpdate = new PacketListener() {
+                        @Override
+                        public void onPacketReceived(Client client, Packet packet) {
+                            if(client.itemListsUpdated) {
+                                //refresh item list after logging into the game
+                                javax.swing.DefaultListModel<String> listModel = new javax.swing.DefaultListModel<String>();
+                                System.out.println("Vault chests size: " + client.vaultChests.size());
+                                if(AppGui.this.client.inv.size() > 0) {
+                                    //listModel.addElement("Chest #" + entry.getKey());
+                                    int i = 1;
+                                    for(Integer item : AppGui.this.client.inv) {
+                                        listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
+                                    }
+                                    for(Integer item : AppGui.this.client.backpack) {
+                                        listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
+                                    }
+                                }
+                                AppGui.this.invList.setModel(listModel);
+                                client.itemListsUpdated = false;
+                            }
+                        }
+                    };
+                    AppGui.this.proxy.hookPacket(Packet.PacketType.UPDATE, listUpdate);
+                    AppGui.this.proxy.hookPacket(Packet.PacketType.NEWTICK, listUpdate);
+                    
+                } catch(Exception e) {
                     AppGui.this.logArea.append("Unable to initialize client..." + newLine);
                     AppGui.this.btnLogin.setEnabled(false);
+                    AppGui.this.logArea.setForeground(java.awt.Color.RED);
                     for(StackTraceElement ste : e.getStackTrace()) {
                         AppGui.this.logArea.append(ste.toString() + newLine);
                     }
+                    AppGui.this.logArea.setForeground(java.awt.Color.BLACK);
                 }
             }
         });
@@ -534,6 +589,7 @@ public class AppGui extends javax.swing.JFrame {
     private javax.swing.JTextField charIdField;
     private javax.swing.JTextField emailField;
     private javax.swing.Box.Filler filler1;
+    private javax.swing.JList invList;
     private javax.swing.JButton jButton2;
     private javax.swing.JCheckBox jCheckBox1;
     private javax.swing.JLabel jLabel1;
@@ -545,7 +601,6 @@ public class AppGui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JList jList2;
-    private javax.swing.JList jList3;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
