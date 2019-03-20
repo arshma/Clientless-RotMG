@@ -45,12 +45,15 @@ public class Client {
     public int connectTime = 0;
     public String connectedServerName = "UNKNOWN_SERVER_NAME";
     public String connectedServerIp = "";
-    public int port = 2050;
     public ServerNode connectedServer;
+    public int port = 2050;
     //public String server = "ec2-13-57-254-131.us-west-1.compute.amazonaws.com";
     //public String server = "13.57.254.131";
+    public boolean itemListsUpdated = false;
     
-    public HashMap<Integer, ArrayList<String>> vaultChests = new HashMap<>(5);
+    public HashMap<Integer, ArrayList<Integer>> vaultChests = new HashMap<>(10);
+    public ArrayList<Integer> inv = new ArrayList<Integer>(8);
+    public ArrayList<Integer> backpack = new ArrayList<Integer>(8);
     
     public Client(Proxy proxy) {
         try {
@@ -159,6 +162,8 @@ public class Client {
             this.connectTime = 0;
             this.position = null;
             this.vaultChests.clear();       //feature under testing
+            this.inv.clear();
+            this.backpack.clear();
             System.out.println("NOTICE::Client: Client disconnected.");
         } catch(Exception e) {
             System.out.println("ERROR::Client: Failed to disconnect client.");
