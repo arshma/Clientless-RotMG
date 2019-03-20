@@ -12,6 +12,7 @@ import net.packets.client.*;
 import net.packets.dataobjects.Entity;
 import net.packets.dataobjects.Location;
 import net.packets.dataobjects.LocationRecord;
+import net.packets.dataobjects.StatData;
 import net.packets.dataobjects.Status;
 import net.packets.server.*;
 
@@ -26,7 +27,7 @@ public class Proxy {
         this.serverPacketReceived = new ArrayList<PacketListener>(5);
         
         this.defaultHooks();
-        System.out.println("Number of packets being hooked: " + this.packetHooks.size());
+        System.out.println("Number of different packets being hooked: " + this.packetHooks.size());
     }    
 
     
@@ -74,6 +75,7 @@ public class Proxy {
                 loadPacket.characterId = client.charId;
                 loadPacket.isFromArena = false;
                 client.sendQueue.add(loadPacket);
+                System.out.println("Connected to map: [" + ((MapInfoPacket)packet).name + "]");
             }
         });
         this.hookPacket(PacketType.CREATESUCCESS, new PacketListener() {
@@ -176,5 +178,110 @@ public class Proxy {
                 }
             }
         });
+        
+        //Parses stat data about inventory, backpack, and vault chests; possibly new info.
+        this.hookPacket(PacketType.UPDATE, new PacketListener() {
+            @Override
+            public void onPacketReceived(Client client, Packet packet) {
+                UpdatePacket up = (UpdatePacket)packet; 
+                for(Entity ent : up.newObjs) {
+                    //Loads inventory and backpack items
+                    if(ent.status.objectId == client.objectId) {
+                        for(StatData sd : ent.status.data) {
+                            //Ignore first 4 inv slots which refer to player equip slots in this context
+                            if(sd.type >= StatData.StatsType.Inventory4 && sd.type <= StatData.StatsType.Inventory11) {
+                                client.inv.add(sd.type - StatData.StatsType.Inventory4, sd.intValue);
+                            } else if(sd.type >= StatData.StatsType.Backpack0 && sd.type <= StatData.StatsType.Backpack7) {
+                                client.backpack.add(sd.type - StatData.StatsType.Backpack0, sd.intValue);
+                            }
+                        }
+                        System.out.print("INV: [");
+                        for(int i = 0; i < client.inv.size(); i++) {
+                            System.out.print(GameData.items.byId(client.inv.get(i)).name + (i == client.inv.size()-1? "]\n" : ", "));
+                        }
+                        System.out.print("BACKPACK: [");
+                        for(int i = 0; i < client.backpack.size(); i++) {
+                            System.out.print(GameData.items.byId(client.backpack.get(i)).name + (i == client.backpack.size()-1? "]\n" : ", "));
+                        }
+                        client.itemListsUpdated = true;
+                    }
+                    //Loads vault chest data
+                    else if(ent.objectType == 0x0504) {
+                        System.out.println("Chest ID is: " + ent.status.objectId);
+                        System.out.println("Items: ");
+                        ArrayList<Integer> chest = new ArrayList<>(8);
+                        for(StatData sd : ent.status.data) {
+                            if(sd.type >= StatData.StatsType.Inventory0 && sd.type <= StatData.StatsType.Inventory7) {
+                                System.out.println(sd.type + "\t" + GameData.items.byId(sd.intValue).name);
+                                chest.add(sd.type - StatData.StatsType.Inventory0, sd.intValue);
+                            }
+                        }
+                        client.vaultChests.put(ent.status.objectId, chest);
+                        client.itemListsUpdated = true;
+                        /*
+                        System.out.println("CHEST ITEM ORDER: [");
+                        for(int i = 0; i < chest.size(); i++) {
+                            System.out.println("\t" + GameData.items.byId(chest.get(i)).name);
+                        }
+                        */
+                        //System.out.println("Item added to the map");
+                        //client.vaultChests.size();
+                    }
+                }
+            }
+        });
+        
+        //Parses stat data about inventory, backpack, and vault chests; updates old info.
+        this.hookPacket(PacketType.NEWTICK, new PacketListener() {
+            @Override
+            public void onPacketReceived(Client client, Packet packet) {
+                NewTickPacket ntp = (NewTickPacket)packet;
+                for(Status s : ntp.statuses) {
+                    //Update inventory and backpack items
+                    if(s.objectId == client.objectId) {
+                        for(StatData sd : s.data) {
+                            //Ignore first 4 inventory slots which refer to player equip slots in this context
+                            if(sd.type >= StatData.StatsType.Inventory4 && sd.type <= StatData.StatsType.Inventory11) {
+                                client.inv.set(sd.type - StatData.StatsType.Inventory4, sd.intValue);
+                            } else if(sd.type >= StatData.StatsType.Backpack0 && sd.type <= StatData.StatsType.Backpack7) {
+                                client.backpack.set(sd.type - StatData.StatsType.Backpack0, sd.intValue);
+                            }
+                        }
+                        System.out.print("INV: [");
+                        for(int i = 0; i < client.inv.size(); i++) {
+                            System.out.print(GameData.items.byId(client.inv.get(i)).name + (i == client.inv.size()-1? "]\n" : ", "));
+                        }
+                        System.out.print("BACKPACK: [");
+                        for(int i = 0; i < client.backpack.size(); i++) {
+                            System.out.print(GameData.items.byId(client.backpack.get(i)).name + (i == client.backpack.size()-1? "]\n" : ", "));
+                        }
+                        client.itemListsUpdated = true;
+                    }
+                    //Update vault chest data
+                    else if(client.vaultChests.containsKey(s.objectId)) {
+                        System.out.println("Chest ID is: " + s.objectId);
+                        System.out.println("Items: ");
+                        ArrayList<Integer> chest = client.vaultChests.get(s.objectId);
+                        for(StatData sd : s.data) {
+                            if(sd.type >= StatData.StatsType.Inventory0 && sd.type <= StatData.StatsType.Inventory7) {
+                                System.out.println(sd.type + "\t" + GameData.items.byId(sd.intValue).name);
+                                chest.set(sd.type - StatData.StatsType.Inventory0, sd.intValue);                                
+                            }
+                        }
+                        client.vaultChests.put(s.objectId, chest);
+                        client.itemListsUpdated = true;
+                        /*
+                        System.out.println("CHEST ITEM ORDER: [");
+                        for(int i = 0; i < chest.size(); i++) {
+                            System.out.println("\t" + GameData.items.byId(chest.get(i)).name);
+                        }
+                        */
+                        //System.out.println("Item added to the map");
+                        //client.vaultChests.size();
+                    }
+                }
+            }
+        });        
     }
+    
 }
