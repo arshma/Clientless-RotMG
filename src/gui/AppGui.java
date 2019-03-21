@@ -3,6 +3,8 @@ package gui;
 import gamedata.structs.Account;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import listeners.PacketListener;
 import net.Client;
 import net.packets.Packet;
@@ -101,7 +103,6 @@ public class AppGui extends javax.swing.JFrame {
                 btnLoginActionPerformed(evt);
             }
         });
-        btnLogin.setEnabled(false);
 
         jLabel3.setText("Server: ");
 
@@ -149,6 +150,7 @@ public class AppGui extends javax.swing.JFrame {
         jLabel7.setText("Inventory:");
 
         invList.setDoubleBuffered(true);
+        invList.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         jScrollPane4.setViewportView(invList);
 
         jCheckBox1.setText("Enable Vaulting");
@@ -158,6 +160,8 @@ public class AppGui extends javax.swing.JFrame {
 
         charIdField.setToolTipText("(Optional) Id of character to login with. If not provided, log in with oldest char created.");
         charIdField.setDoubleBuffered(true);
+
+        btnLogin.setEnabled(false);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -364,7 +368,47 @@ public class AppGui extends javax.swing.JFrame {
     }//GEN-LAST:event_serverComboBoxItemStateChanged
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
-        logArea.append("Sending trade request to player.\n");
+        this.workerPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    net.packets.client.InvSwapPacket isp = new net.packets.client.InvSwapPacket();
+                    isp.time = AppGui.this.client.getTime();
+                    isp.position = (net.packets.dataobjects.Location)AppGui.this.client.position.clone();
+                    System.out.println("my char pos at time of trade: [" + isp.position + "]");
+                    isp.slotObject1 = new net.packets.dataobjects.SlotObject();
+                    isp.slotObject1.objectId = AppGui.this.client.objectId;
+                    isp.slotObject1.slotId = 10;
+                    isp.slotObject1.objectType = 2832;
+                    System.out.println("item about to be moved: [" + isp.slotObject1 + "]");
+                    
+                    isp.slotObject2 = new net.packets.dataobjects.SlotObject();                    
+                    //Search for empty slot in vault chest
+                    for(java.util.Map.Entry<Integer, ArrayList<Integer>> entry : AppGui.this.client.vaultChests.entrySet()) {
+                        for(Integer item : entry.getValue()) {
+                            if(item == -1) {
+                                isp.slotObject2.objectId = entry.getKey();
+                                isp.slotObject2.slotId = entry.getValue().indexOf(-1);
+                                isp.slotObject2.objectType = item;
+                                System.out.println("Empty chest slot found." + entry.getValue().indexOf(-1));
+                            }
+                        }
+                        if(isp.slotObject2.objectId > 0) {
+                            break;
+                        }
+                    }
+                    System.out.println("Slot to move to: [" + isp.slotObject2 + "]");
+                    
+                    //isp.slotObject2.objectId = 390;  //chest id
+                    //isp.slotObject2.slotId = 3;
+                    //isp.slotObject2.objectType = -1;
+                    
+                    AppGui.this.client.sendQueue.add(isp);
+                } catch (CloneNotSupportedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void tradeNameFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tradeNameFieldActionPerformed
@@ -381,7 +425,6 @@ public class AppGui extends javax.swing.JFrame {
                     AppGui.this.logoff();
                 } else {
                     try {
-                        //extract email and password for logging in.
                         AppGui.this.email = AppGui.this.emailField.getText();
                         AppGui.this.password = new String(AppGui.this.passField.getPassword());
                         String charIdText = AppGui.this.charIdField.getText();
@@ -406,21 +449,6 @@ public class AppGui extends javax.swing.JFrame {
                         AppGui.this.setTitle(AppGui.this.getTitle() + " - " + AppGui.this.email);
                         AppGui.this.btnLogin.setText("Logout");
                         
-                        //refresh item list after logging into the game
-                        javax.swing.DefaultListModel<String> listModel = new javax.swing.DefaultListModel<String>();
-                        System.out.println("Vault chests size: " + client.vaultChests.size());
-                        if(AppGui.this.client.vaultChests.size() > 0) {
-                            for(java.util.Map.Entry<Integer, ArrayList<String>> entry : client.vaultChests.entrySet()) {
-                                listModel.addElement("Chest #" + entry.getKey());
-                                for(String itemName : entry.getValue()) {
-                                    listModel.addElement("     " + itemName);
-                                }
-                            }
-                        }
-                        AppGui.this.invList.setModel(listModel);
-                        AppGui.this.invList.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-                        
-
                     } catch(java.net.ConnectException e) {
                         AppGui.this.logArea.append("Unable to connect to server. Check if client is up to date." + newLine);
                     } catch(java.lang.NumberFormatException e) {
@@ -559,7 +587,33 @@ public class AppGui extends javax.swing.JFrame {
                     
                     AppGui.this.btnLogin.setEnabled(true);
                     
-                }catch(Exception e) {
+                    //Listener that detects item list change via 'Update' and 'NewTick' packets.
+                    PacketListener listUpdate = new PacketListener() {
+                        @Override
+                        public void onPacketReceived(Client client, Packet packet) {
+                            if(client.itemListsUpdated) {
+                                //refresh item list after logging into the game
+                                javax.swing.DefaultListModel<String> listModel = new javax.swing.DefaultListModel<String>();
+                                System.out.println("Vault chests size: " + client.vaultChests.size());
+                                if(AppGui.this.client.inv.size() > 0) {
+                                    //listModel.addElement("Chest #" + entry.getKey());
+                                    int i = 1;
+                                    for(Integer item : AppGui.this.client.inv) {
+                                        listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
+                                    }
+                                    for(Integer item : AppGui.this.client.backpack) {
+                                        listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
+                                    }
+                                }
+                                AppGui.this.invList.setModel(listModel);
+                                client.itemListsUpdated = false;
+                            }
+                        }
+                    };
+                    AppGui.this.proxy.hookPacket(Packet.PacketType.UPDATE, listUpdate);
+                    AppGui.this.proxy.hookPacket(Packet.PacketType.NEWTICK, listUpdate);
+                    
+                } catch(Exception e) {
                     AppGui.this.logArea.append("Unable to initialize client..." + newLine);
                     AppGui.this.btnLogin.setEnabled(false);
                     AppGui.this.logArea.setForeground(java.awt.Color.RED);
