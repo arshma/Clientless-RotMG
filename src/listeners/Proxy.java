@@ -14,6 +14,7 @@ import net.packets.dataobjects.Location;
 import net.packets.dataobjects.LocationRecord;
 import net.packets.dataobjects.StatData;
 import net.packets.dataobjects.Status;
+import net.packets.dataobjects.VaultChest;
 import net.packets.server.*;
 
 //This class maintains lists of all the listerners that need to be informed upon a certain event.
@@ -100,6 +101,9 @@ public class Proxy {
                         try {
                             client.position = (Location)ent.status.position.clone();
                             System.out.println("NOTICE::Proxy.java: Client location updated by 'Update' packet." + client.position);
+                            if(client.moveToPos == null) {
+                                client.moveToPos = (Location)ent.status.position.clone();
+                            }
                             break;
                         } catch (CloneNotSupportedException e) {
                             System.out.println("ERROR::Proxy.java: Unable to set char position");
@@ -128,7 +132,33 @@ public class Proxy {
                     MovePacket movePacket = (MovePacket)Packet.create(PacketType.MOVE);  
                     movePacket.tickId = client.lastTickId;
                     movePacket.time = client.getTime();
-                    movePacket.newPosition = (Location)client.position.clone();
+                    
+                    //Determine new location to move to. Movement restricted by client spd.
+                    if(client.position.isSameAs(client.moveToPos)) {
+                        movePacket.newPosition = (Location)client.position.clone();
+                    } else {
+                        Location temp = (Location)client.moveToPos.clone();                        
+                        float clientSpd = client.getClientSpeed();
+                        //Finds correct x-coord
+                        float coordDiff = temp.x - client.position.x;
+                        if(Math.abs(coordDiff) > clientSpd) {
+                            if(coordDiff < 0.0) {
+                                temp.x = client.position.x - clientSpd;
+                            } else {
+                                temp.x = client.position.x + clientSpd;
+                            }
+                        }
+                        coordDiff = temp.y - client.position.y;
+                        if(Math.abs(coordDiff) > clientSpd) {
+                            if(coordDiff < 0.0) {
+                                temp.y = client.position.y - clientSpd;
+                            } else {
+                                temp.y = client.position.y + clientSpd;
+                            }
+                        }
+                        movePacket.newPosition = temp;
+                    }
+                    
                     movePacket.records = new ArrayList<LocationRecord>();
                     client.sendQueue.add(movePacket);
                     
@@ -156,6 +186,8 @@ public class Proxy {
                 FailurePacket fp = (FailurePacket)packet;
                 client.errorId = fp.errorId;
                 client.errorMsg = fp.errorMessage + ""; //creates a new string rather than referencing old one.
+                //Logout upon failure
+                //client.disconnect();
             }
         });
         this.hookPacket(PacketType.GOTO, new PacketListener() {
@@ -209,12 +241,18 @@ public class Proxy {
                     else if(ent.objectType == 0x0504) {
                         System.out.println("Chest ID is: " + ent.status.objectId);
                         System.out.println("Items: ");
-                        ArrayList<Integer> chest = new ArrayList<>(8);
+                        ArrayList<Integer> chestItems = new ArrayList<>(8);
                         for(StatData sd : ent.status.data) {
                             if(sd.type >= StatData.StatsType.Inventory0 && sd.type <= StatData.StatsType.Inventory7) {
                                 System.out.println(sd.type + "\t" + GameData.items.byId(sd.intValue).name);
-                                chest.add(sd.type - StatData.StatsType.Inventory0, sd.intValue);
+                                chestItems.add(sd.type - StatData.StatsType.Inventory0, sd.intValue);
                             }
+                        }
+                        VaultChest chest;
+                        try {
+                            chest = new VaultChest(ent.status.objectId, (Location)ent.status.position.clone(), chestItems);
+                        } catch (CloneNotSupportedException e) {
+                            chest = new VaultChest(ent.status.objectId, Location.empty(), chestItems);
                         }
                         client.vaultChests.put(ent.status.objectId, chest);
                         client.itemListsUpdated = true;
@@ -260,16 +298,21 @@ public class Proxy {
                     //Update vault chest data
                     else if(client.vaultChests.containsKey(s.objectId)) {
                         System.out.println("Chest ID is: " + s.objectId);
+                        System.out.println("Chest pos: [" + s.position + "]");
                         System.out.println("Items: ");
-                        ArrayList<Integer> chest = client.vaultChests.get(s.objectId);
+                        VaultChest chest = client.vaultChests.get(s.objectId);
                         for(StatData sd : s.data) {
                             if(sd.type >= StatData.StatsType.Inventory0 && sd.type <= StatData.StatsType.Inventory7) {
                                 System.out.println(sd.type + "\t" + GameData.items.byId(sd.intValue).name);
-                                chest.set(sd.type - StatData.StatsType.Inventory0, sd.intValue);                                
+                                chest.items.set(sd.type - StatData.StatsType.Inventory0, sd.intValue);                                
                             }
                         }
                         client.vaultChests.put(s.objectId, chest);
                         client.itemListsUpdated = true;
+                        
+                        //move char to main chest
+                        client.moveToPos.x = 44.5f;
+                        client.moveToPos.y = 70.5f;
                         /*
                         System.out.println("CHEST ITEM ORDER: [");
                         for(int i = 0; i < chest.size(); i++) {
@@ -281,7 +324,48 @@ public class Proxy {
                     }
                 }
             }
-        });        
+        }); 
+        
+        this.hookPacket(PacketType.INVRESULT, new PacketListener() {
+            @Override
+            public void onPacketReceived(Client client, Packet packet) {
+                InvResultPacket irp = (InvResultPacket)packet;
+                System.out.println("InvSwap result: [" + irp.result + "]");
+            }
+        });
+        
+        //Accepts trade when other player accepts trade
+        this.hookPacket(PacketType.TRADEACCEPTED, new PacketListener() {
+            @Override
+            public void onPacketReceived(Client client, Packet packet) {
+                TradeAcceptedPacket tap = (TradeAcceptedPacket)packet;
+                /*
+                System.out.print("My offers: [");
+                for(boolean b : tap.myOffers) {
+                    System.out.print(b + ", ");
+                }
+                System.out.println();
+                
+                System.out.print("Partner's offers: [");
+                for(boolean b : tap.partnerOffers) {
+                    System.out.print(b + ", ");
+                }
+                System.out.println();   
+                */
+                AcceptTradePacket atp = new AcceptTradePacket();
+                atp.myOffers = tap.myOffers;
+                atp.yourOffers = tap.partnerOffers;
+                client.sendQueue.add(atp);
+            }
+        });
+        
+        this.hookPacket(PacketType.TRADEDONE, new PacketListener() {
+            @Override
+            public void onPacketReceived(Client client, Packet packet) {
+                //TradeDonePacket tdp = (TradeDonePacket)packet;
+                //System.out.println(tdp.result + ", " + tdp.message);
+            }
+        });
     }
     
 }
