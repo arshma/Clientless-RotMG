@@ -1,6 +1,7 @@
 package gui;
 
 import gamedata.structs.Account;
+import java.awt.Toolkit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.logging.Level;
@@ -225,32 +226,29 @@ public class AppGui extends javax.swing.JFrame {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addContainerGap()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(jLabel1)
-                                    .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel2))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                        .addComponent(jLabel3)
-                                        .addComponent(serverComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(jLabel4)))
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(passField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jLabel8)
-                                    .addComponent(charIdField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(btnLogin))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(tradeNameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(jLabel1)
+                                .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jLabel2))
+                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(passField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jLabel8)
+                                .addComponent(charIdField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(btnLogin)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(tradeNameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(jLabel3)
+                                .addComponent(serverComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jLabel4))
+                        .addGap(14, 14, 14)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel7)
                             .addComponent(jLabel6))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 107, Short.MAX_VALUE)
+                            .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
                             .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGap(92, 92, 92)
@@ -371,7 +369,9 @@ public class AppGui extends javax.swing.JFrame {
         this.workerPool.execute(new Runnable() {
             @Override
             public void run() {
+                /*
                 try {
+                    
                     net.packets.client.InvSwapPacket isp = new net.packets.client.InvSwapPacket();
                     isp.time = AppGui.this.client.getTime();
                     isp.position = (net.packets.dataobjects.Location)AppGui.this.client.position.clone();
@@ -407,6 +407,15 @@ public class AppGui extends javax.swing.JFrame {
                 } catch (CloneNotSupportedException e) {
                     e.printStackTrace();
                 }
+                */
+                    
+                //move the client move by 2 units.
+                //AppGui.this.client.moveToPos.x = AppGui.this.client.position.x;
+                //AppGui.this.client.moveToPos.y = AppGui.this.client.position.y + 20f;
+                
+                net.packets.client.RequestTradePacket rtp = new net.packets.client.RequestTradePacket();
+                rtp.name = AppGui.this.tradeNameField.getText();
+                client.sendQueue.add(rtp);
             }
         });
     }//GEN-LAST:event_jButton2ActionPerformed
@@ -421,7 +430,7 @@ public class AppGui extends javax.swing.JFrame {
         this.workerPool.execute(new Runnable() {
             @Override
             public void run() {
-                if(AppGui.this.loggedin) {
+                if(AppGui.this.client.isLoggedIn()) {
                     AppGui.this.logoff();
                 } else {
                     try {
@@ -460,9 +469,7 @@ public class AppGui extends javax.swing.JFrame {
                         }
                         AppGui.this.logArea.append(errMsg);
                         //safely dispose of the connection.
-                        if(AppGui.this.client.isConnected()) {
-                            AppGui.this.client.disconnect();
-                        }
+                        AppGui.this.logoff();
                     }
                 }
             }
@@ -513,6 +520,7 @@ public class AppGui extends javax.swing.JFrame {
                 mainWin.setTitle("RotMG Clientless");
                 mainWin.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
                 mainWin.setLocationRelativeTo(null);
+                mainWin.setIconImage(Toolkit.getDefaultToolkit().createImage("includes/img/iconFrame.png"));
                 mainWin.setVisible(true);
             }
         });
@@ -548,12 +556,15 @@ public class AppGui extends javax.swing.JFrame {
     
     //Action to perfrom when logging off from a client.
     private void logoff() {
-        if(this.client != null)
-            this.client.disconnect();
-        this.loggedin = false;
-        this.setTitle(this.defaultTitle);
-        this.btnLogin.setText("Login");
-        this.logArea.append("Disconnecting from server..." + newLine);
+        if(this.client != null) {
+            if(this.client.isConnected()) {
+                this.client.disconnect();
+            }
+            this.loggedin = false;
+            this.setTitle(this.defaultTitle);
+            this.btnLogin.setText("Login");
+            this.logArea.append("Disconnecting from server..." + newLine);
+        }
     }
     
     //Prepares static game data.
@@ -570,9 +581,11 @@ public class AppGui extends javax.swing.JFrame {
                     AppGui.this.proxy = new listeners.Proxy();
                     
                     AppGui.this.logArea.append("Loading server list..." + newLine);
+                    //NOTE: Abbreviations list must be updated when server list is updated, otherwise,
+                    //      new servers will not show up.
                     AppGui.this.serverList = new ArrayList<String>(gamedata.structs.ServerNode.abbreviations.keySet());
                     Collections.sort(AppGui.this.serverList);
-                    //create new model for already created server combobox
+                    //new model with server list for already created server combobox
                     AppGui.this.serverComboBox.setModel(new javax.swing.DefaultComboBoxModel(AppGui.this.serverList.toArray()));
                     AppGui.this.serverComboBox.setSelectedItem("USWest");
                     gamedata.structs.ServerNode sNode = gamedata.GameData.servers.byName("USWest");
@@ -583,9 +596,7 @@ public class AppGui extends javax.swing.JFrame {
                     }
 
                     AppGui.this.logArea.append("Initializing game client..." + newLine);
-                    AppGui.this.client = new net.Client(proxy);
-                    
-                    AppGui.this.btnLogin.setEnabled(true);
+                    AppGui.this.client = new net.Client(proxy);                    
                     
                     //Listener that detects item list change via 'Update' and 'NewTick' packets.
                     PacketListener listUpdate = new PacketListener() {
@@ -595,7 +606,7 @@ public class AppGui extends javax.swing.JFrame {
                                 //refresh item list after logging into the game
                                 javax.swing.DefaultListModel<String> listModel = new javax.swing.DefaultListModel<String>();
                                 System.out.println("Vault chests size: " + client.vaultChests.size());
-                                if(AppGui.this.client.inv.size() > 0) {
+                                if(AppGui.this.client.inv.size() > 0 || AppGui.this.client.backpack.size() > 0) {
                                     //listModel.addElement("Chest #" + entry.getKey());
                                     int i = 1;
                                     for(Integer item : AppGui.this.client.inv) {
@@ -612,6 +623,8 @@ public class AppGui extends javax.swing.JFrame {
                     };
                     AppGui.this.proxy.hookPacket(Packet.PacketType.UPDATE, listUpdate);
                     AppGui.this.proxy.hookPacket(Packet.PacketType.NEWTICK, listUpdate);
+                    
+                    AppGui.this.btnLogin.setEnabled(true);
                     
                 } catch(Exception e) {
                     AppGui.this.logArea.append("Unable to initialize client..." + newLine);
