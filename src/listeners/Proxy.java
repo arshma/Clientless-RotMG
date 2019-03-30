@@ -76,7 +76,7 @@ public class Proxy {
                 loadPacket.characterId = client.charId;
                 loadPacket.isFromArena = false;
                 client.sendQueue.add(loadPacket);
-                System.out.println("Connected to map: [" + ((MapInfoPacket)packet).name + "]");
+                System.out.println("Connected to map: [" + ((MapInfoPacket)packet).name + "], loading: " + loadPacket.characterId);
             }
         });
         this.hookPacket(PacketType.CREATESUCCESS, new PacketListener() {
@@ -103,6 +103,12 @@ public class Proxy {
                             System.out.println("NOTICE::Proxy.java: Client location updated by 'Update' packet." + client.position);
                             if(client.moveToPos == null) {
                                 client.moveToPos = (Location)ent.status.position.clone();
+                            }
+                            for(StatData sd : ent.status.data) {
+                                if(sd.type == StatData.StatsType.HasBackpack) {
+                                    client.hasBackpack = (sd.intValue > 0);
+                                    System.out.println("NOTICE::Proxy: Client has a backpack: [" + (sd.intValue > 0) + "]");
+                                }
                             }
                             break;
                         } catch (CloneNotSupportedException e) {
@@ -186,8 +192,9 @@ public class Proxy {
                 FailurePacket fp = (FailurePacket)packet;
                 client.errorId = fp.errorId;
                 client.errorMsg = fp.errorMessage + ""; //creates a new string rather than referencing old one.
+                System.out.println("Faliure ID: [" + fp.errorId + "], errMsg: [" + fp.errorMessage + "]");
                 //Logout upon failure
-                //client.disconnect();
+                client.disconnect();
             }
         });
         this.hookPacket(PacketType.GOTO, new PacketListener() {
@@ -256,6 +263,7 @@ public class Proxy {
                         }
                         client.vaultChests.put(ent.status.objectId, chest);
                         client.itemListsUpdated = true;
+                        client.itemListLastUpdate = client.getTime();
                         /*
                         System.out.println("CHEST ITEM ORDER: [");
                         for(int i = 0; i < chest.size(); i++) {
@@ -309,10 +317,11 @@ public class Proxy {
                         }
                         client.vaultChests.put(s.objectId, chest);
                         client.itemListsUpdated = true;
+                        client.itemListLastUpdate = client.getTime();
                         
                         //move char to main chest
-                        client.moveToPos.x = 44.5f;
-                        client.moveToPos.y = 70.5f;
+                        //client.moveToPos.x = 44.5f;
+                        //client.moveToPos.y = 70.5f;
                         /*
                         System.out.println("CHEST ITEM ORDER: [");
                         for(int i = 0; i < chest.size(); i++) {
@@ -362,8 +371,8 @@ public class Proxy {
         this.hookPacket(PacketType.TRADEDONE, new PacketListener() {
             @Override
             public void onPacketReceived(Client client, Packet packet) {
-                //TradeDonePacket tdp = (TradeDonePacket)packet;
-                //System.out.println(tdp.result + ", " + tdp.message);
+                TradeDonePacket tdp = (TradeDonePacket)packet;
+                System.out.println(tdp.result + ", " + tdp.message);
             }
         });
     }
