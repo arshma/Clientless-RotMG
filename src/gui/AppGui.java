@@ -2,6 +2,9 @@ package gui;
 
 import gamedata.structs.Account;
 import java.awt.Toolkit;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.logging.Level;
@@ -9,9 +12,17 @@ import java.util.logging.Logger;
 import listeners.PacketListener;
 import net.Client;
 import net.packets.Packet;
+import net.packets.Packet.PacketType;
+import net.packets.client.InvSwapPacket;
 import net.packets.dataobjects.Entity;
+import net.packets.dataobjects.Location;
+import net.packets.dataobjects.SlotObject;
 import net.packets.dataobjects.StatData;
+import net.packets.dataobjects.VaultChest;
+import net.packets.server.TradeDonePacket;
 import net.packets.server.UpdatePacket;
+import util.Constants;
+import util.Constants.GameId;
 
 public class AppGui extends javax.swing.JFrame {
 
@@ -44,7 +55,7 @@ public class AppGui extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
         tradeNameField = new javax.swing.JTextField();
-        jButton2 = new javax.swing.JButton();
+        btnTrade = new javax.swing.JButton();
         serverComboBox = new javax.swing.JComboBox();
         jScrollPane2 = new javax.swing.JScrollPane();
         logArea = new javax.swing.JTextArea();
@@ -55,9 +66,10 @@ public class AppGui extends javax.swing.JFrame {
         jLabel7 = new javax.swing.JLabel();
         jScrollPane4 = new javax.swing.JScrollPane();
         invList = new javax.swing.JList();
-        jCheckBox1 = new javax.swing.JCheckBox();
+        cbVaulting = new javax.swing.JCheckBox();
         jLabel8 = new javax.swing.JLabel();
         charIdField = new javax.swing.JTextField();
+        btnStoreItems = new javax.swing.JButton();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
@@ -117,13 +129,14 @@ public class AppGui extends javax.swing.JFrame {
             }
         });
 
-        jButton2.setText("Trade");
-        jButton2.setToolTipText("Send trade request (Trades items selected in inventory).");
-        jButton2.addActionListener(new java.awt.event.ActionListener() {
+        btnTrade.setText("Trade");
+        btnTrade.setToolTipText("Begins trade with the specified player.");
+        btnTrade.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton2ActionPerformed(evt);
+                btnTradeActionPerformed(evt);
             }
         });
+        btnTrade.setEnabled(false);
 
         serverComboBox.setDoubleBuffered(true);
         serverComboBox.addItemListener(new java.awt.event.ItemListener() {
@@ -154,13 +167,27 @@ public class AppGui extends javax.swing.JFrame {
         invList.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         jScrollPane4.setViewportView(invList);
 
-        jCheckBox1.setText("Enable Vaulting");
-        jCheckBox1.setToolTipText("Deposit items in the vault when inventory is full (if enough space in vault).");
+        cbVaulting.setText("Auto Storage");
+        cbVaulting.setToolTipText("When enabled, stores items in vault after each trade.");
+        cbVaulting.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                cbVaultingItemStateChanged(evt);
+            }
+        });
 
         jLabel8.setText("Char ID:");
 
-        charIdField.setToolTipText("(Optional) Id of character to login with. If not provided, log in with oldest char created.");
+        charIdField.setToolTipText("(Optional) Id of character to login with. If not provided, log in with random character.");
         charIdField.setDoubleBuffered(true);
+
+        btnStoreItems.setText("Store Items");
+        btnStoreItems.setToolTipText("Moves items to backpack and vault if enough space.");
+        btnStoreItems.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnStoreItemsActionPerformed(evt);
+            }
+        });
+        btnStoreItems.setEnabled(false);
 
         btnLogin.setEnabled(false);
 
@@ -191,77 +218,83 @@ public class AppGui extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addGap(0, 44, Short.MAX_VALUE)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel7)
-                                    .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 285, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGap(74, 74, 74)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addGroup(jPanel1Layout.createSequentialGroup()
-                                        .addGap(47, 47, 47)
-                                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(jLabel7)
+                                        .addGap(130, 130, 130))
                                     .addGroup(jPanel1Layout.createSequentialGroup()
-                                        .addGap(31, 31, 31)
-                                        .addComponent(jCheckBox1))))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, jPanel1Layout.createSequentialGroup()
+                                        .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 285, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                                .addGap(0, 1, Short.MAX_VALUE)
+                                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                                    .addComponent(cbVaulting, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                    .addComponent(btnTrade, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                                            .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
+                            .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(jLabel4)
                                     .addComponent(jLabel2))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(tradeNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addGroup(jPanel1Layout.createSequentialGroup()
+                                        .addComponent(tradeNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(107, 107, 107))
                                     .addGroup(jPanel1Layout.createSequentialGroup()
                                         .addComponent(passField, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addGap(18, 18, 18)
                                         .addComponent(jLabel8)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addComponent(charIdField, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addComponent(btnLogin, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)))))))
+                                        .addComponent(charIdField, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
+                                .addComponent(btnLogin, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)))))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel1)
+                        .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel2))
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(passField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel8)
+                        .addComponent(charIdField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(btnLogin)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(tradeNameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel3)
+                        .addComponent(serverComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jLabel4))
+                .addGap(14, 14, 14)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel7)
+                    .addComponent(jLabel6))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLabel1)
-                                .addComponent(emailField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel2))
-                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(passField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jLabel8)
-                                .addComponent(charIdField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(btnLogin)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(tradeNameField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(jLabel3)
-                                .addComponent(serverComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(jLabel4))
-                        .addGap(14, 14, 14)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel7)
-                            .addComponent(jLabel6))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
-                            .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(92, 92, 92)
-                        .addComponent(jCheckBox1)
+                        .addComponent(cbVaulting)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 59, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 22, Short.MAX_VALUE)))
+                        .addComponent(btnTrade, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                 .addGap(23, 23, 23)
                 .addComponent(jLabel5)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
+
+        cbVaulting.setSelected(true);
 
         jMenuBar1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
         jMenuBar1.setDoubleBuffered(true);
@@ -365,7 +398,7 @@ public class AppGui extends javax.swing.JFrame {
         });
     }//GEN-LAST:event_serverComboBoxItemStateChanged
 
-    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+    private void btnTradeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTradeActionPerformed
         this.workerPool.execute(new Runnable() {
             @Override
             public void run() {
@@ -412,13 +445,19 @@ public class AppGui extends javax.swing.JFrame {
                 //move the client move by 2 units.
                 //AppGui.this.client.moveToPos.x = AppGui.this.client.position.x;
                 //AppGui.this.client.moveToPos.y = AppGui.this.client.position.y + 20f;
-                
+                                
+                String name = AppGui.this.tradeNameField.getText().trim();
+                if(name.matches("")) {
+                    AppGui.this.logArea.append("ERROR: Enter a valid player name to trade with." + newLine);
+                    return;
+                }
                 net.packets.client.RequestTradePacket rtp = new net.packets.client.RequestTradePacket();
-                rtp.name = AppGui.this.tradeNameField.getText();
+                rtp.name = name;
                 client.sendQueue.add(rtp);
+                AppGui.this.logArea.append("Trade requested with player [" + rtp.name + "]" + newLine);
             }
         });
-    }//GEN-LAST:event_jButton2ActionPerformed
+    }//GEN-LAST:event_btnTradeActionPerformed
 
     private void tradeNameFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tradeNameFieldActionPerformed
         // TODO add your handling code here:
@@ -449,14 +488,15 @@ public class AppGui extends javax.swing.JFrame {
                         }
                         
                         AppGui.this.logArea.append("Attempting to login..." + newLine);
-                        if(!AppGui.this.client.login(new gamedata.structs.Account(AppGui.this.email, AppGui.this.password, AppGui.this.charId))) {
+                        if(!AppGui.this.client.login(new gamedata.structs.Account(AppGui.this.email, AppGui.this.password, AppGui.this.charId), GameId.NEXUS)) {
                             throw new Exception("Email or password is invalid.");
                         }
 
-                        AppGui.this.loggedin = true;
                         AppGui.this.logArea.append("Successfuly connected to server [" + AppGui.this.server.name + "]" + newLine);
                         AppGui.this.setTitle(AppGui.this.getTitle() + " - " + AppGui.this.email);
                         AppGui.this.btnLogin.setText("Logout");
+                        AppGui.this.btnTrade.setEnabled(true);
+                        AppGui.this.btnStoreItems.setEnabled(true);
                         
                     } catch(java.net.ConnectException e) {
                         AppGui.this.logArea.append("Unable to connect to server. Check if client is up to date." + newLine);
@@ -479,6 +519,18 @@ public class AppGui extends javax.swing.JFrame {
     private void emailFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_emailFieldActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_emailFieldActionPerformed
+
+    private void cbVaultingItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbVaultingItemStateChanged
+        if(evt.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
+            AppGui.this.autoStore = true;
+        } else {
+            AppGui.this.autoStore = false;
+        }
+    }//GEN-LAST:event_cbVaultingItemStateChanged
+
+    private void btnStoreItemsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStoreItemsActionPerformed
+        workerPool.execute(AppGui.this.storeTask);
+    }//GEN-LAST:event_btnStoreItemsActionPerformed
     
     /*
     /**
@@ -520,7 +572,14 @@ public class AppGui extends javax.swing.JFrame {
                 mainWin.setTitle("RotMG Clientless");
                 mainWin.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
                 mainWin.setLocationRelativeTo(null);
-                mainWin.setIconImage(Toolkit.getDefaultToolkit().createImage("includes/img/iconFrame.png"));
+                
+                ArrayList<java.awt.Image> list = new ArrayList<>();
+                list.add(Toolkit.getDefaultToolkit().createImage("includes/img/icon1.png"));
+                list.add(Toolkit.getDefaultToolkit().createImage("includes/img/icon2.png"));
+                list.add(Toolkit.getDefaultToolkit().createImage("includes/img/icon3.png"));
+                list.add(Toolkit.getDefaultToolkit().createImage("includes/img/icon4.png"));
+                mainWin.setIconImages(list);
+                
                 mainWin.setVisible(true);
             }
         });
@@ -539,18 +598,23 @@ public class AppGui extends javax.swing.JFrame {
                 }
             }
         }));
+        
+        AppGui.TestJSONParser();
     }
     
     //ROTMG variables
     private final String defaultTitle = "RotMG Clientless";
-    private boolean loggedin = false;
-    private net.Client client;
-    private listeners.Proxy proxy;
     private String email;
     private String password;
     private int charId;
-    private gamedata.structs.ServerNode server;
+    private boolean autoStore = true;
+    
+    private listeners.Proxy proxy;
+    private net.Client client;
     private ArrayList<String> serverList;
+    private gamedata.structs.ServerNode server;
+    private Runnable storeTask;
+    
     private java.util.concurrent.ExecutorService workerPool = java.util.concurrent.Executors.newFixedThreadPool(1);
     private String newLine = System.lineSeparator();
     
@@ -560,10 +624,11 @@ public class AppGui extends javax.swing.JFrame {
             if(this.client.isConnected()) {
                 this.client.disconnect();
             }
-            this.loggedin = false;
             this.setTitle(this.defaultTitle);
             this.btnLogin.setText("Login");
             this.logArea.append("Disconnecting from server..." + newLine);
+            this.btnTrade.setEnabled(false);
+            this.btnStoreItems.setEnabled(false);
         }
     }
     
@@ -598,31 +663,8 @@ public class AppGui extends javax.swing.JFrame {
                     AppGui.this.logArea.append("Initializing game client..." + newLine);
                     AppGui.this.client = new net.Client(proxy);                    
                     
-                    //Listener that detects item list change via 'Update' and 'NewTick' packets.
-                    PacketListener listUpdate = new PacketListener() {
-                        @Override
-                        public void onPacketReceived(Client client, Packet packet) {
-                            if(client.itemListsUpdated) {
-                                //refresh item list after logging into the game
-                                javax.swing.DefaultListModel<String> listModel = new javax.swing.DefaultListModel<String>();
-                                System.out.println("Vault chests size: " + client.vaultChests.size());
-                                if(AppGui.this.client.inv.size() > 0 || AppGui.this.client.backpack.size() > 0) {
-                                    //listModel.addElement("Chest #" + entry.getKey());
-                                    int i = 1;
-                                    for(Integer item : AppGui.this.client.inv) {
-                                        listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
-                                    }
-                                    for(Integer item : AppGui.this.client.backpack) {
-                                        listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
-                                    }
-                                }
-                                AppGui.this.invList.setModel(listModel);
-                                client.itemListsUpdated = false;
-                            }
-                        }
-                    };
-                    AppGui.this.proxy.hookPacket(Packet.PacketType.UPDATE, listUpdate);
-                    AppGui.this.proxy.hookPacket(Packet.PacketType.NEWTICK, listUpdate);
+                    setListeners();
+                    setTasks();
                     
                     AppGui.this.btnLogin.setEnabled(true);
                     
@@ -638,15 +680,172 @@ public class AppGui extends javax.swing.JFrame {
             }
         });
     }
+    
+    private void setListeners() {
+        //Listener that detects item list change via 'Update' and 'NewTick' packets.
+        PacketListener listUpdate = new PacketListener() {
+            @Override
+            public void onPacketReceived(Client client, Packet packet) {
+                if(client.itemListsUpdated) {
+                    //refresh item list after logging into the game
+                    javax.swing.DefaultListModel<String> listModel = new javax.swing.DefaultListModel<String>();
+                    System.out.println("Vault chests size: " + client.vaultChests.size());
+                    if(AppGui.this.client.inv.size() > 0 || AppGui.this.client.backpack.size() > 0) {
+                        //listModel.addElement("Chest #" + entry.getKey());
+                        int i = 1;
+                        for(Integer item : AppGui.this.client.inv) {
+                            listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
+                        }
+                        if(client.hasBackpack) {
+                            for(Integer item : AppGui.this.client.backpack) {
+                                listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
+                            }
+                        }
+                    }
+                    AppGui.this.invList.setModel(listModel);
+                    client.itemListsUpdated = false;
+                }
+            }
+        };
+        AppGui.this.proxy.hookPacket(Packet.PacketType.UPDATE, listUpdate);
+        AppGui.this.proxy.hookPacket(Packet.PacketType.NEWTICK, listUpdate);
+        
+        //Upon completed trade, store items if vaulting is enabled.
+        AppGui.this.proxy.hookPacket(PacketType.TRADEDONE, new PacketListener() {
+            @Override
+            public void onPacketReceived(Client client, Packet packet) {
+                TradeDonePacket tdp = (TradeDonePacket)packet;
+                //Only care about successful trades
+                if(tdp.result == 0 && AppGui.this.autoStore) {
+                    workerPool.execute(AppGui.this.storeTask);                    
+                }
+            }
+        });
+    }
+    
+    private void setTasks() {
+        this.storeTask = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    //Disable features while vaulting???
+                    AppGui.this.btnTrade.setEnabled(false);
+                    AppGui.this.btnStoreItems.setEnabled(false);
+
+                    AppGui.this.logArea.append("Storing items...Please wait..." + newLine);
+                    client.moveItemsToBackpack();
+
+                    //Connect to vault.
+                    client.reconnect(GameId.VAULT);
+
+                    //wait for the chest data to come in.
+                    while((client.getTime() - client.itemListLastUpdate) < 2000) {
+                        Thread.sleep(200);
+                    }
+
+                    //vault items
+                    if(!client.isInventoryEmpty() && !client.isBackpackEmpty()) {
+                        //inventory slots values range from [4, 11] and backpack ranges from [12, 19]
+                        for(int s = 4; s < 20; s++) {
+                            int fromSlot = (s < 12? s - 4 : s - 12);
+                            ArrayList<Integer> storeFrom = (s < 12? client.inv : client.backpack);
+                            int item = storeFrom.get(fromSlot);
+                            if(item == -1) {
+                                continue;
+                            }
+
+                            //Find a empty slot in vault.
+                            int toSlot = -1;
+                            for(VaultChest vc : client.vaultChests.values()) {
+                                for(int i = 0; i < 8 ; i++) {
+                                    if(vc.items.get(i) == -1) {
+                                        toSlot = i;
+                                        break;
+                                    }
+                                }
+                                if(toSlot > -1) {
+                                    //move to chest location
+                                    client.moveToFreely((Location)vc.position.clone());
+                                    while(!client.position.isSameAs(vc.position)) {
+                                        Thread.sleep(500);
+                                    }
+                                    //empty slot was found in vault; move item here from inv/backpack
+                                    InvSwapPacket isp = new InvSwapPacket();
+                                    isp.position = (Location)client.position.clone();
+                                    isp.time = client.getTime();
+                                    isp.slotObject1 = new SlotObject();
+                                    isp.slotObject1.objectId = client.objectId;
+                                    isp.slotObject1.slotId = s;
+                                    isp.slotObject1.objectType = item;
+                                    isp.slotObject2 = new SlotObject();
+                                    isp.slotObject2.objectId = vc.id;
+                                    isp.slotObject2.slotId = toSlot;
+                                    isp.slotObject2.objectType = -1;
+                                    client.sendQueue.add(isp);
+
+                                    System.out.println("From: " + isp.slotObject1);
+                                    System.out.println("To: " + isp.slotObject2);
+
+                                    Thread.sleep(650);                                    
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    client.reconnect(GameId.NEXUS);
+                    AppGui.this.logArea.append("Finished storing items..." + newLine);
+                    AppGui.this.btnTrade.setEnabled(true);
+                    AppGui.this.btnStoreItems.setEnabled(true);
+
+                } catch(InterruptedException | CloneNotSupportedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+    }
+    
+    private static void TestJSONParser() {
+        java.io.BufferedReader br = null;
+        try {
+            br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("includes/res/accounts.json"), "UTF-8"));
+            String json = "";
+            String line;
+            while((line = br.readLine()) != null) {
+                json += line;
+            }
+            org.json.JSONObject jo = new org.json.JSONObject(json);
+            org.json.JSONArray arr = jo.getJSONArray("accounts");
+            for(int i = 0; i < arr.length(); i++) {
+                String email = arr.getJSONObject(i).getString("email");
+                String password = arr.getJSONObject(i).getString("password");
+                int charId = arr.getJSONObject(i).getInt("charid");
+                System.out.println("read obj: [" + email + ", " + password + ", " + charId + "]");
+            }
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(AppGui.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (UnsupportedEncodingException ex) {
+            Logger.getLogger(AppGui.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(AppGui.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                br.close();
+            } catch (IOException ex) {
+                Logger.getLogger(AppGui.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLogin;
+    private javax.swing.JButton btnStoreItems;
+    private javax.swing.JButton btnTrade;
+    private javax.swing.JCheckBox cbVaulting;
     private javax.swing.JTextField charIdField;
     private javax.swing.JTextField emailField;
     private javax.swing.Box.Filler filler1;
     private javax.swing.JList invList;
-    private javax.swing.JButton jButton2;
-    private javax.swing.JCheckBox jCheckBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
