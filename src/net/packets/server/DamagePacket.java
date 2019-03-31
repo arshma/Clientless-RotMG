@@ -23,9 +23,9 @@ public class DamagePacket extends Packet{
     public void read(PacketReader r) throws IOException {
         this.targetId = r.readInt();
         
-        short size = r.readShort();
+        int size = r.readUnsignedByte();
         this.effects = new ArrayList<ConditionEffect>(size);
-        for(short i = 0; i < size; i++) {
+        for(int i = 0; i < size; i++) {
             this.effects.add(ConditionEffect.getConst(1 << r.readUnsignedByte()));
         }
         
