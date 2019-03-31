@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import listeners.PacketListener;
@@ -62,7 +64,7 @@ public class AppGui extends javax.swing.JFrame {
         jLabel5 = new javax.swing.JLabel();
         jLabel6 = new javax.swing.JLabel();
         jScrollPane3 = new javax.swing.JScrollPane();
-        jList2 = new javax.swing.JList();
+        jlAccountList = new javax.swing.JList();
         jLabel7 = new javax.swing.JLabel();
         jScrollPane4 = new javax.swing.JScrollPane();
         invList = new javax.swing.JList();
@@ -158,8 +160,9 @@ public class AppGui extends javax.swing.JFrame {
 
         jLabel6.setText("Accounts:");
 
-        jList2.setDoubleBuffered(true);
-        jScrollPane3.setViewportView(jList2);
+        jlAccountList.setDoubleBuffered(true);
+        jlAccountList.setSelectionMode(javax.swing.DefaultListSelectionModel.SINGLE_SELECTION);
+        jScrollPane3.setViewportView(jlAccountList);
 
         jLabel7.setText("Inventory:");
 
@@ -599,7 +602,6 @@ public class AppGui extends javax.swing.JFrame {
             }
         }));
         
-        AppGui.TestJSONParser();
     }
     
     //ROTMG variables
@@ -614,6 +616,7 @@ public class AppGui extends javax.swing.JFrame {
     private ArrayList<String> serverList;
     private gamedata.structs.ServerNode server;
     private Runnable storeTask;
+    private Map<String, Account> accounts;
     
     private java.util.concurrent.ExecutorService workerPool = java.util.concurrent.Executors.newFixedThreadPool(1);
     private String newLine = System.lineSeparator();
@@ -665,6 +668,19 @@ public class AppGui extends javax.swing.JFrame {
                     
                     setListeners();
                     setTasks();
+                    
+                    //Initialize accounts list
+                    AppGui.this.logArea.append("Loading saved accounts..." + newLine);
+                    AppGui.this.accounts = AppGui.this.loadAccounts();
+                    if(AppGui.this.accounts.size() > 0) {
+                        javax.swing.DefaultListModel listModel = new javax.swing.DefaultListModel<>();
+                        Object[] accList = AppGui.this.accounts.keySet().toArray();
+                        java.util.Arrays.sort(accList);
+                        for(Object guid : accList) {
+                            listModel.addElement(guid);
+                        }
+                        AppGui.this.jlAccountList.setModel(listModel);                        
+                    }   
                     
                     AppGui.this.btnLogin.setEnabled(true);
                     
@@ -718,6 +734,25 @@ public class AppGui extends javax.swing.JFrame {
                 //Only care about successful trades
                 if(tdp.result == 0 && AppGui.this.autoStore) {
                     workerPool.execute(AppGui.this.storeTask);                    
+                }
+            }
+        });
+        
+        //Load the GUI login info from saved accounts list
+        AppGui.this.jlAccountList.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if(e.getClickCount() == 2) {
+                    int index = AppGui.this.jlAccountList.locationToIndex(e.getPoint());
+                    String gui = (String)AppGui.this.jlAccountList.getModel().getElementAt(index);
+                    Account acc = AppGui.this.accounts.get(gui);
+                    if(acc != null) {
+                        AppGui.this.emailField.setText(acc.guid);
+                        AppGui.this.passField.setText(acc.password);
+                        AppGui.this.charIdField.setText(Integer.toString(acc.charId));
+                    } else {
+                        AppGui.this.logArea.append("ERROR: Unable to load account.");
+                    }
                 }
             }
         });
@@ -805,7 +840,8 @@ public class AppGui extends javax.swing.JFrame {
         };
     }
     
-    private static void TestJSONParser() {
+    private HashMap<String, Account> loadAccounts() {
+        HashMap<String, Account> accMap = new HashMap<>(10);
         java.io.BufferedReader br = null;
         try {
             br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("includes/res/accounts.json"), "UTF-8"));
@@ -821,19 +857,21 @@ public class AppGui extends javax.swing.JFrame {
                 String password = arr.getJSONObject(i).getString("password");
                 int charId = arr.getJSONObject(i).getInt("charid");
                 System.out.println("read obj: [" + email + ", " + password + ", " + charId + "]");
+                accMap.put(email, new Account(email, password, charId));
             }
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(AppGui.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(AppGui.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(AppGui.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (FileNotFoundException  e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         } finally {
             try {
                 br.close();
-            } catch (IOException ex) {
-                Logger.getLogger(AppGui.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+            return accMap;
         }
     }
 
@@ -854,7 +892,6 @@ public class AppGui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
-    private javax.swing.JList jList2;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
@@ -867,6 +904,7 @@ public class AppGui extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JPopupMenu.Separator jSeparator1;
+    private javax.swing.JList jlAccountList;
     private javax.swing.JTextArea logArea;
     private javax.swing.JPasswordField passField;
     private javax.swing.JComboBox serverComboBox;
