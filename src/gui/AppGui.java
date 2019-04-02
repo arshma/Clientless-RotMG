@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.event.ListDataEvent;
 import listeners.PacketListener;
 import net.Client;
 import net.packets.Packet;
@@ -21,6 +22,7 @@ import net.packets.dataobjects.Location;
 import net.packets.dataobjects.SlotObject;
 import net.packets.dataobjects.StatData;
 import net.packets.dataobjects.VaultChest;
+import net.packets.server.FailurePacket;
 import net.packets.server.TradeDonePacket;
 import net.packets.server.UpdatePacket;
 import util.Constants;
@@ -73,13 +75,13 @@ public class AppGui extends javax.swing.JFrame {
         charIdField = new javax.swing.JTextField();
         btnStoreItems = new javax.swing.JButton();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
+        filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0));
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
+        jMenuItem3 = new javax.swing.JMenuItem();
         jMenuItem1 = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         jMenuItem2 = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
-        jMenuItem3 = new javax.swing.JMenuItem();
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -162,6 +164,7 @@ public class AppGui extends javax.swing.JFrame {
 
         jlAccountList.setDoubleBuffered(true);
         jlAccountList.setSelectionMode(javax.swing.DefaultListSelectionModel.SINGLE_SELECTION);
+        jlAccountList.setModel(new javax.swing.DefaultListModel<>());
         jScrollPane3.setViewportView(jlAccountList);
 
         jLabel7.setText("Inventory:");
@@ -287,10 +290,10 @@ public class AppGui extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(btnTrade, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 109, Short.MAX_VALUE)
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                .addGap(23, 23, 23)
+                        .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, 35, Short.MAX_VALUE))
+                    .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jLabel5)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -304,8 +307,17 @@ public class AppGui extends javax.swing.JFrame {
         jMenuBar1.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
 
         jMenu1.setText("File");
+        jMenu1.setFocusable(false);
 
-        jMenuItem1.setText("Load accounts");
+        jMenuItem3.setText("Clear Log");
+        jMenuItem3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem3ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jMenuItem3);
+
+        jMenuItem1.setText("Save Account");
         jMenuItem1.setToolTipText("");
         jMenuItem1.setActionCommand("Load acocunts");
         jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
@@ -316,7 +328,7 @@ public class AppGui extends javax.swing.JFrame {
         jMenu1.add(jMenuItem1);
         jMenu1.add(jSeparator1);
 
-        jMenuItem2.setText("Save accounts");
+        jMenuItem2.setText("Close");
         jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jMenuItem2ActionPerformed(evt);
@@ -325,23 +337,6 @@ public class AppGui extends javax.swing.JFrame {
         jMenu1.add(jMenuItem2);
 
         jMenuBar1.add(jMenu1);
-
-        jMenu2.setText("Mules");
-        jMenu2.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenu2ActionPerformed(evt);
-            }
-        });
-
-        jMenuItem3.setText("Refresh");
-        jMenuItem3.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem3ActionPerformed(evt);
-            }
-        });
-        jMenu2.add(jMenuItem3);
-
-        jMenuBar1.add(jMenu2);
 
         setJMenuBar(jMenuBar1);
 
@@ -360,28 +355,17 @@ public class AppGui extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        javax.swing.JFileChooser jfc = new javax.swing.JFileChooser();
-        if(jfc.showOpenDialog(null) == javax.swing.JFileChooser.APPROVE_OPTION) {
-            //load account data from file.
-            logArea.append("Account info loaded from file.\n");            
-        }
+        AppGui.this.workerPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                AppGui.this.saveAccount();
+            }
+        });
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
-        javax.swing.JFileChooser jfc = new javax.swing.JFileChooser();
-        if(jfc.showSaveDialog(null) == javax.swing.JFileChooser.APPROVE_OPTION) {
-            //load account data from file.
-            logArea.append("Account info saved to file.\n");            
-        }
+        System.exit(0);
     }//GEN-LAST:event_jMenuItem2ActionPerformed
-
-    private void jMenu2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenu2ActionPerformed
-        logArea.append("Account mule list has been updated.\n");
-    }//GEN-LAST:event_jMenu2ActionPerformed
-
-    private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
-        logArea.append("Account mules list reloaded.\n"); 
-    }//GEN-LAST:event_jMenuItem3ActionPerformed
 
     private void serverComboBoxItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_serverComboBoxItemStateChanged
         workerPool.execute(new Runnable() {
@@ -448,7 +432,7 @@ public class AppGui extends javax.swing.JFrame {
                 //move the client move by 2 units.
                 //AppGui.this.client.moveToPos.x = AppGui.this.client.position.x;
                 //AppGui.this.client.moveToPos.y = AppGui.this.client.position.y + 20f;
-                                
+                
                 String name = AppGui.this.tradeNameField.getText().trim();
                 if(name.matches("")) {
                     AppGui.this.logArea.append("ERROR: Enter a valid player name to trade with." + newLine);
@@ -485,7 +469,7 @@ public class AppGui extends javax.swing.JFrame {
                             AppGui.this.charId = -1;
                         }
 
-                        AppGui.this.logArea.append("Attempting to connect to server" + "" + newLine);
+                        AppGui.this.logArea.append("Attempting to connect to server..." + newLine);
                         if(!AppGui.this.client.connect(AppGui.this.server)) {
                             throw new java.net.ConnectException();
                         }
@@ -496,7 +480,7 @@ public class AppGui extends javax.swing.JFrame {
                         }
 
                         AppGui.this.logArea.append("Successfuly connected to server [" + AppGui.this.server.name + "]" + newLine);
-                        AppGui.this.setTitle(AppGui.this.getTitle() + " - " + AppGui.this.email);
+                        AppGui.this.setTitle(AppGui.this.getTitle() + " - " + AppGui.this.email + "[" + AppGui.this.client.accountName + "]");
                         AppGui.this.btnLogin.setText("Logout");
                         AppGui.this.btnTrade.setEnabled(true);
                         AppGui.this.btnStoreItems.setEnabled(true);
@@ -508,9 +492,9 @@ public class AppGui extends javax.swing.JFrame {
                     } catch (Exception e) {
                         String errMsg = "Unable to login.";
                         if(e.getMessage() != null) {
-                            errMsg += " " + e.getMessage() + newLine;
+                            errMsg += " " + e.getMessage();
                         }
-                        AppGui.this.logArea.append(errMsg);
+                        AppGui.this.logArea.append(errMsg + newLine);
                         //safely dispose of the connection.
                         AppGui.this.logoff();
                     }
@@ -534,6 +518,15 @@ public class AppGui extends javax.swing.JFrame {
     private void btnStoreItemsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStoreItemsActionPerformed
         workerPool.execute(AppGui.this.storeTask);
     }//GEN-LAST:event_btnStoreItemsActionPerformed
+
+    private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
+        AppGui.this.workerPool.execute(new Runnable() {
+            @Override
+            public void run() {
+                AppGui.this.logArea.setText("");
+            }
+        });
+    }//GEN-LAST:event_jMenuItem3ActionPerformed
     
     /*
     /**
@@ -666,21 +659,22 @@ public class AppGui extends javax.swing.JFrame {
                     AppGui.this.logArea.append("Initializing game client..." + newLine);
                     AppGui.this.client = new net.Client(proxy);                    
                     
-                    setListeners();
-                    setTasks();
                     
                     //Initialize accounts list
                     AppGui.this.logArea.append("Loading saved accounts..." + newLine);
                     AppGui.this.accounts = AppGui.this.loadAccounts();
-                    if(AppGui.this.accounts.size() > 0) {
+                    if(AppGui.this.accounts.size() > 0) {                        
                         javax.swing.DefaultListModel listModel = new javax.swing.DefaultListModel<>();
                         Object[] accList = AppGui.this.accounts.keySet().toArray();
                         java.util.Arrays.sort(accList);
                         for(Object guid : accList) {
                             listModel.addElement(guid);
-                        }
-                        AppGui.this.jlAccountList.setModel(listModel);                        
+                        } 
+                        AppGui.this.jlAccountList.setModel(listModel);
                     }   
+                    
+                    setListeners();
+                    setTasks();
                     
                     AppGui.this.btnLogin.setEnabled(true);
                     
@@ -738,24 +732,55 @@ public class AppGui extends javax.swing.JFrame {
             }
         });
         
+        
+        //Upon failure, reset GUI
+        AppGui.this.proxy.hookPacket(PacketType.FAILURE, new PacketListener() {
+            @Override
+            public void onPacketReceived(Client client, Packet packet) {
+                System.out.println("NOTICE::AppGui: Failure!");
+                FailurePacket fp = (FailurePacket)packet;
+                AppGui.this.logArea.append("Connection terminated due to failure...[" + fp.errorMessage + "]" + newLine);
+                AppGui.this.logoff();
+            }
+        });
+        
+        
         //Load the GUI login info from saved accounts list
         AppGui.this.jlAccountList.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 if(e.getClickCount() == 2) {
                     int index = AppGui.this.jlAccountList.locationToIndex(e.getPoint());
-                    String gui = (String)AppGui.this.jlAccountList.getModel().getElementAt(index);
-                    Account acc = AppGui.this.accounts.get(gui);
-                    if(acc != null) {
-                        AppGui.this.emailField.setText(acc.guid);
-                        AppGui.this.passField.setText(acc.password);
-                        AppGui.this.charIdField.setText(Integer.toString(acc.charId));
-                    } else {
-                        AppGui.this.logArea.append("ERROR: Unable to load account.");
-                    }
+                    if(index >= 0) {
+                        String gui = (String)AppGui.this.jlAccountList.getModel().getElementAt(index);
+                        Account acc = AppGui.this.accounts.get(gui);
+                        if(acc != null) {
+                            AppGui.this.emailField.setText(acc.guid);
+                            AppGui.this.passField.setText(acc.password);
+                            AppGui.this.charIdField.setText(Integer.toString(acc.charId));
+                        } else {
+                            AppGui.this.logArea.append("ERROR: Unable to load account.");
+                        }
+                    }                    
                 }
             }
         });
+        
+        //Removes entry from list when 'Delete' is pressed
+        AppGui.this.jlAccountList.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                if(e.getKeyCode() == java.awt.event.KeyEvent.VK_DELETE) {
+                    AppGui.this.workerPool.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            AppGui.this.removeAccount();
+                        }
+                    });
+                }
+            }
+        });
+        
     }
     
     private void setTasks() {
@@ -763,7 +788,7 @@ public class AppGui extends javax.swing.JFrame {
             @Override
             public void run() {
                 try {
-                    //Disable features while vaulting???
+                    //
                     AppGui.this.btnTrade.setEnabled(false);
                     AppGui.this.btnStoreItems.setEnabled(false);
 
@@ -844,7 +869,7 @@ public class AppGui extends javax.swing.JFrame {
         HashMap<String, Account> accMap = new HashMap<>(10);
         java.io.BufferedReader br = null;
         try {
-            br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("includes/res/accounts.json"), "UTF-8"));
+            br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("includes/res/accounts2.json"), "UTF-8"));
             String json = "";
             String line;
             while((line = br.readLine()) != null) {
@@ -874,6 +899,113 @@ public class AppGui extends javax.swing.JFrame {
             return accMap;
         }
     }
+    
+    private void saveAccount() {
+        String newEmail = AppGui.this.emailField.getText().trim();
+        String newPass = new String(AppGui.this.passField.getPassword());
+        if(newEmail.matches("") || newPass.matches("")) {
+            AppGui.this.logArea.append("ERROR: Unable to save account info. Enter valid email and password." + newLine);
+            return;
+        }
+        String newCharId = AppGui.this.charIdField.getText().trim();
+        if(newCharId.matches("")) {
+            newCharId = "-1";
+        }
+        AppGui.this.logArea.append("Saving account info for account [" + newEmail + "]" + newLine);
+        //"accounts" map needs to be updated to allow for JList to search data associated with an email
+        AppGui.this.accounts.put(newEmail, new Account(newEmail, newPass, Integer.parseInt(newCharId)));
+        ((javax.swing.DefaultListModel)AppGui.this.jlAccountList.getModel()).addElement(newEmail);
+        
+        java.io.BufferedReader br = null;
+        java.io.BufferedWriter bw = null;
+        try {
+            br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("includes/res/accounts2.json"), "UTF-8"));
+            String json = "";
+            String line;
+            while((line = br.readLine()) != null) {
+                json += line;
+            }
+            br.close();           
+            
+            org.json.JSONObject jo = new org.json.JSONObject(json);
+            org.json.JSONArray arr = jo.getJSONArray("accounts");
+            org.json.JSONObject newJo = new org.json.JSONObject("{\"email\": \"" + newEmail + 
+                                                                 "\",\"password\": \"" + newPass + 
+                                                                 "\",\"charid\": " + newCharId + "}");
+            arr.put(newJo);
+            jo.put("accounts", arr);
+            bw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream("includes/res/accounts2.json")));
+            bw.write(jo.toString());
+            bw.close();
+            
+        } catch (FileNotFoundException  e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                br.close();
+                bw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    private void removeAccount() {
+        String entry = (String)AppGui.this.jlAccountList.getSelectedValue();
+        
+        if(entry == null) {
+            return;
+        }
+        //remove from GUI
+        AppGui.this.logArea.append("Removing saved account [" + entry + "] from list." + newLine);
+        ((javax.swing.DefaultListModel)AppGui.this.jlAccountList.getModel()).removeElement(entry);
+        AppGui.this.accounts.remove(entry);
+        
+        //remove from file
+        java.io.BufferedReader br = null;
+        java.io.BufferedWriter bw = null;
+        try {
+            br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("includes/res/accounts2.json"), "UTF-8"));
+            String json = "";
+            String line;
+            while((line = br.readLine()) != null) {
+                json += line;
+            }
+            br.close();           
+            
+            org.json.JSONObject jo = new org.json.JSONObject(json);
+            org.json.JSONArray arr = jo.getJSONArray("accounts");
+            for(int i = 0; i < arr.length(); i++) {
+                if(arr.getJSONObject(i).getString("email").compareTo(entry) == 0) {
+                    arr.remove(i);
+                    break;
+                }
+            }
+            jo.put("accounts", arr);
+            bw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream("includes/res/accounts2.json")));
+            bw.write(jo.toString());
+            bw.close();
+            
+        } catch (FileNotFoundException  e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                br.close();
+                bw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnLogin;
@@ -883,6 +1015,7 @@ public class AppGui extends javax.swing.JFrame {
     private javax.swing.JTextField charIdField;
     private javax.swing.JTextField emailField;
     private javax.swing.Box.Filler filler1;
+    private javax.swing.Box.Filler filler2;
     private javax.swing.JList invList;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
@@ -893,7 +1026,6 @@ public class AppGui extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JMenu jMenu1;
-    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
