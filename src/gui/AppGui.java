@@ -1,6 +1,8 @@
 package gui;
 
+import gamedata.GameData;
 import gamedata.structs.Account;
+import gamedata.structs.ServerNode;
 import java.awt.Toolkit;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -9,23 +11,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.event.ListDataEvent;
 import listeners.PacketListener;
+import listeners.Proxy;
 import net.Client;
 import net.packets.Packet;
 import net.packets.Packet.PacketType;
 import net.packets.client.InvSwapPacket;
-import net.packets.dataobjects.Entity;
 import net.packets.dataobjects.Location;
 import net.packets.dataobjects.SlotObject;
-import net.packets.dataobjects.StatData;
 import net.packets.dataobjects.VaultChest;
 import net.packets.server.FailurePacket;
 import net.packets.server.TradeDonePacket;
-import net.packets.server.UpdatePacket;
-import util.Constants;
 import util.Constants.GameId;
 
 public class AppGui extends javax.swing.JFrame {
@@ -388,51 +384,7 @@ public class AppGui extends javax.swing.JFrame {
     private void btnTradeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTradeActionPerformed
         this.workerPool.execute(new Runnable() {
             @Override
-            public void run() {
-                /*
-                try {
-                    
-                    net.packets.client.InvSwapPacket isp = new net.packets.client.InvSwapPacket();
-                    isp.time = AppGui.this.client.getTime();
-                    isp.position = (net.packets.dataobjects.Location)AppGui.this.client.position.clone();
-                    System.out.println("my char pos at time of trade: [" + isp.position + "]");
-                    isp.slotObject1 = new net.packets.dataobjects.SlotObject();
-                    isp.slotObject1.objectId = AppGui.this.client.objectId;
-                    isp.slotObject1.slotId = 10;
-                    isp.slotObject1.objectType = 2832;
-                    System.out.println("item about to be moved: [" + isp.slotObject1 + "]");
-                    
-                    isp.slotObject2 = new net.packets.dataobjects.SlotObject();                    
-                    //Search for empty slot in vault chest
-                    for(java.util.Map.Entry<Integer, ArrayList<Integer>> entry : AppGui.this.client.vaultChests.entrySet()) {
-                        for(Integer item : entry.getValue()) {
-                            if(item == -1) {
-                                isp.slotObject2.objectId = entry.getKey();
-                                isp.slotObject2.slotId = entry.getValue().indexOf(-1);
-                                isp.slotObject2.objectType = item;
-                                System.out.println("Empty chest slot found." + entry.getValue().indexOf(-1));
-                            }
-                        }
-                        if(isp.slotObject2.objectId > 0) {
-                            break;
-                        }
-                    }
-                    System.out.println("Slot to move to: [" + isp.slotObject2 + "]");
-                    
-                    //isp.slotObject2.objectId = 390;  //chest id
-                    //isp.slotObject2.slotId = 3;
-                    //isp.slotObject2.objectType = -1;
-                    
-                    AppGui.this.client.sendQueue.add(isp);
-                } catch (CloneNotSupportedException e) {
-                    e.printStackTrace();
-                }
-                */
-                    
-                //move the client move by 2 units.
-                //AppGui.this.client.moveToPos.x = AppGui.this.client.position.x;
-                //AppGui.this.client.moveToPos.y = AppGui.this.client.position.y + 20f;
-                
+            public void run() {                
                 String name = AppGui.this.tradeNameField.getText().trim();
                 if(name.matches("")) {
                     AppGui.this.logArea.append("ERROR: Enter a valid player name to trade with." + newLine);
@@ -447,12 +399,11 @@ public class AppGui extends javax.swing.JFrame {
     }//GEN-LAST:event_btnTradeActionPerformed
 
     private void tradeNameFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tradeNameFieldActionPerformed
-        // TODO add your handling code here:
+
     }//GEN-LAST:event_tradeNameFieldActionPerformed
 
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
 
-        //Free up EDT
         this.workerPool.execute(new Runnable() {
             @Override
             public void run() {
@@ -460,13 +411,12 @@ public class AppGui extends javax.swing.JFrame {
                     AppGui.this.logoff();
                 } else {
                     try {
-                        AppGui.this.email = AppGui.this.emailField.getText();
-                        AppGui.this.password = new String(AppGui.this.passField.getPassword());
+                        String email = AppGui.this.emailField.getText();
+                        String password = new String(AppGui.this.passField.getPassword());
                         String charIdText = AppGui.this.charIdField.getText();
+                        int charId = -1;
                         if(!charIdText.equals("")) {
-                            AppGui.this.charId = Integer.parseInt(charIdText);
-                        } else {
-                            AppGui.this.charId = -1;
+                            charId = Integer.parseInt(charIdText);
                         }
 
                         AppGui.this.logArea.append("Attempting to connect to server..." + newLine);
@@ -475,20 +425,25 @@ public class AppGui extends javax.swing.JFrame {
                         }
                         
                         AppGui.this.logArea.append("Attempting to login..." + newLine);
-                        if(!AppGui.this.client.login(new gamedata.structs.Account(AppGui.this.email, AppGui.this.password, AppGui.this.charId), GameId.NEXUS)) {
+                        if(!AppGui.this.client.login(new Account(email, password, charId), GameId.NEXUS)) {
                             throw new Exception("Email or password is invalid.");
                         }
+                        
+                        //Wait for account name to be set.
+                        while(AppGui.this.client.accountName == null) {
+                            System.out.println("NOTICE::AppGui: Account name not set yet.");
+                            Thread.sleep(150);
+                        }
 
-                        AppGui.this.logArea.append("Successfuly connected to server [" + AppGui.this.server.name + "]" + newLine);
-                        AppGui.this.setTitle(AppGui.this.getTitle() + " - " + AppGui.this.email + "[" + AppGui.this.client.accountName + "]");
+                        AppGui.this.setTitle(AppGui.this.getTitle() + " - " + email + "[" + AppGui.this.client.accountName + "]");
                         AppGui.this.btnLogin.setText("Logout");
                         AppGui.this.btnTrade.setEnabled(true);
                         AppGui.this.btnStoreItems.setEnabled(true);
-                        
+                        AppGui.this.logArea.append("Successfuly connected to server [" + AppGui.this.server.name + "]" + newLine);
                     } catch(java.net.ConnectException e) {
                         AppGui.this.logArea.append("Unable to connect to server. Check if client is up to date." + newLine);
                     } catch(java.lang.NumberFormatException e) {
-                        AppGui.this.logArea.append("Character ID is invalid.");
+                        AppGui.this.logArea.append("Character ID is invalid. It must be an integer.");
                     } catch (Exception e) {
                         String errMsg = "Unable to login.";
                         if(e.getMessage() != null) {
@@ -504,7 +459,7 @@ public class AppGui extends javax.swing.JFrame {
     }//GEN-LAST:event_btnLoginActionPerformed
 
     private void emailFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_emailFieldActionPerformed
-        // TODO add your handling code here:
+        
     }//GEN-LAST:event_emailFieldActionPerformed
 
     private void cbVaultingItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbVaultingItemStateChanged
@@ -599,15 +554,15 @@ public class AppGui extends javax.swing.JFrame {
     
     //ROTMG variables
     private final String defaultTitle = "RotMG Clientless";
-    private String email;
-    private String password;
-    private int charId;
+    //private String email;
+    //private String password;
+    //private int charId;
     private boolean autoStore = true;
     
-    private listeners.Proxy proxy;
-    private net.Client client;
+    private Proxy proxy;
+    private Client client;
     private ArrayList<String> serverList;
-    private gamedata.structs.ServerNode server;
+    private ServerNode server;
     private Runnable storeTask;
     private Map<String, Account> accounts;
     
@@ -639,17 +594,17 @@ public class AppGui extends javax.swing.JFrame {
                     gamedata.GameData.load();
 
                     AppGui.this.logArea.append("Initializing network listeners..." + newLine);
-                    AppGui.this.proxy = new listeners.Proxy();
+                    AppGui.this.proxy = new Proxy();
                     
                     AppGui.this.logArea.append("Loading server list..." + newLine);
                     //NOTE: Abbreviations list must be updated when server list is updated, otherwise,
                     //      new servers will not show up.
-                    AppGui.this.serverList = new ArrayList<String>(gamedata.structs.ServerNode.abbreviations.keySet());
+                    AppGui.this.serverList = new ArrayList<String>(ServerNode.abbreviations.keySet());
                     Collections.sort(AppGui.this.serverList);
                     //new model with server list for already created server combobox
                     AppGui.this.serverComboBox.setModel(new javax.swing.DefaultComboBoxModel(AppGui.this.serverList.toArray()));
                     AppGui.this.serverComboBox.setSelectedItem("USWest");
-                    gamedata.structs.ServerNode sNode = gamedata.GameData.servers.byName("USWest");
+                    ServerNode sNode = GameData.servers.byName("USWest");
                     if(sNode == null) {
                         AppGui.this.logArea.append("Unable select server [USWest].");
                     } else {
@@ -657,7 +612,7 @@ public class AppGui extends javax.swing.JFrame {
                     }
 
                     AppGui.this.logArea.append("Initializing game client..." + newLine);
-                    AppGui.this.client = new net.Client(proxy);                    
+                    AppGui.this.client = new Client(proxy);                    
                     
                     
                     //Initialize accounts list
@@ -692,12 +647,11 @@ public class AppGui extends javax.swing.JFrame {
     }
     
     private void setListeners() {
-        //Listener that detects item list change via 'Update' and 'NewTick' packets.
+        //Detects item list change via 'Update' and 'NewTick' packets.
         PacketListener listUpdate = new PacketListener() {
             @Override
             public void onPacketReceived(Client client, Packet packet) {
                 if(client.itemListsUpdated) {
-                    //refresh item list after logging into the game
                     javax.swing.DefaultListModel<String> listModel = new javax.swing.DefaultListModel<String>();
                     System.out.println("Vault chests size: " + client.vaultChests.size());
                     if(AppGui.this.client.inv.size() > 0 || AppGui.this.client.backpack.size() > 0) {
@@ -709,6 +663,15 @@ public class AppGui extends javax.swing.JFrame {
                         if(client.hasBackpack) {
                             for(Integer item : AppGui.this.client.backpack) {
                                 listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
+                            }
+                        }
+                        
+                        if(client.vaultChests.size() > 0) {
+                            for(VaultChest c : client.vaultChests.values()) {
+                                i = 1;
+                                for(Integer item : c.items) {
+                                    listModel.addElement("[C" + c.id + "." + (i++) + "]" + GameData.items.byId(item).name);
+                                }
                             }
                         }
                     }
@@ -749,7 +712,7 @@ public class AppGui extends javax.swing.JFrame {
         AppGui.this.jlAccountList.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
-                if(e.getClickCount() == 2) {
+                if(e.getClickCount() == 2 && e.getButton() == java.awt.event.MouseEvent.BUTTON1) {
                     int index = AppGui.this.jlAccountList.locationToIndex(e.getPoint());
                     if(index >= 0) {
                         String gui = (String)AppGui.this.jlAccountList.getModel().getElementAt(index);
@@ -787,26 +750,33 @@ public class AppGui extends javax.swing.JFrame {
         this.storeTask = new Runnable() {
             @Override
             public void run() {
+                int numItemsMoved = 0;
+                int numItemsStored = 0;
                 try {
-                    //
+                    AppGui.this.logArea.append("Storing items...Please wait..." + newLine);
                     AppGui.this.btnTrade.setEnabled(false);
                     AppGui.this.btnStoreItems.setEnabled(false);
-
-                    AppGui.this.logArea.append("Storing items...Please wait..." + newLine);
-                    client.moveItemsToBackpack();
-
-                    //Connect to vault.
+                    
+                    
+                    if((numItemsMoved = client.moveItemsToBackpack()) > 0) {
+                        AppGui.this.logArea.append("Moved [" + numItemsMoved + "] items to backpack..." + newLine);
+                    }
+                    
+                    //Only try to vault items if there are items in inventory or backpack.
+                    if(client.isInventoryEmpty() && client.hasBackpack && client.isBackpackEmpty()) {
+                        return;
+                    }
                     client.reconnect(GameId.VAULT);
 
                     //wait for the chest data to come in.
-                    while((client.getTime() - client.itemListLastUpdate) < 2000) {
+                    while((client.getTime() - client.vaultDataLastUpdated) < 2000) {
                         Thread.sleep(200);
                     }
 
-                    //vault items
-                    if(!client.isInventoryEmpty() && !client.isBackpackEmpty()) {
+                    //store items in visible chests
+                    if(!client.isInventoryEmpty() || !client.isBackpackEmpty()) {
                         //inventory slots values range from [4, 11] and backpack ranges from [12, 19]
-                        for(int s = 4; s < 20; s++) {
+                        for(int s = 4; (client.hasBackpack?s < 20 : s < 12); s++) {
                             int fromSlot = (s < 12? s - 4 : s - 12);
                             ArrayList<Integer> storeFrom = (s < 12? client.inv : client.backpack);
                             int item = storeFrom.get(fromSlot);
@@ -842,6 +812,7 @@ public class AppGui extends javax.swing.JFrame {
                                     isp.slotObject2.slotId = toSlot;
                                     isp.slotObject2.objectType = -1;
                                     client.sendQueue.add(isp);
+                                    numItemsStored++;
 
                                     System.out.println("From: " + isp.slotObject1);
                                     System.out.println("To: " + isp.slotObject2);
@@ -854,10 +825,9 @@ public class AppGui extends javax.swing.JFrame {
                     }
 
                     client.reconnect(GameId.NEXUS);
-                    AppGui.this.logArea.append("Finished storing items..." + newLine);
                     AppGui.this.btnTrade.setEnabled(true);
                     AppGui.this.btnStoreItems.setEnabled(true);
-
+                    AppGui.this.logArea.append("Deposited [" + numItemsStored + "] items in chests..." + newLine);
                 } catch(InterruptedException | CloneNotSupportedException e) {
                     e.printStackTrace();
                 }
@@ -911,7 +881,7 @@ public class AppGui extends javax.swing.JFrame {
         if(newCharId.matches("")) {
             newCharId = "-1";
         }
-        AppGui.this.logArea.append("Saving account info for account [" + newEmail + "]" + newLine);
+        
         //"accounts" map needs to be updated to allow for JList to search data associated with an email
         AppGui.this.accounts.put(newEmail, new Account(newEmail, newPass, Integer.parseInt(newCharId)));
         ((javax.swing.DefaultListModel)AppGui.this.jlAccountList.getModel()).addElement(newEmail);
@@ -937,7 +907,7 @@ public class AppGui extends javax.swing.JFrame {
             bw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream("includes/res/accounts2.json")));
             bw.write(jo.toString());
             bw.close();
-            
+            AppGui.this.logArea.append("Saved account info for account [" + newEmail + "]" + newLine);
         } catch (FileNotFoundException  e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
@@ -961,7 +931,6 @@ public class AppGui extends javax.swing.JFrame {
             return;
         }
         //remove from GUI
-        AppGui.this.logArea.append("Removing saved account [" + entry + "] from list." + newLine);
         ((javax.swing.DefaultListModel)AppGui.this.jlAccountList.getModel()).removeElement(entry);
         AppGui.this.accounts.remove(entry);
         
@@ -989,7 +958,7 @@ public class AppGui extends javax.swing.JFrame {
             bw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream("includes/res/accounts2.json")));
             bw.write(jo.toString());
             bw.close();
-            
+            AppGui.this.logArea.append("Removed saved account [" + entry + "] from list." + newLine);
         } catch (FileNotFoundException  e) {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
