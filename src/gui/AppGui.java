@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import listeners.ConnectionListener;
 import listeners.PacketListener;
 import listeners.Proxy;
 import net.Client;
@@ -158,6 +159,7 @@ public class AppGui extends javax.swing.JFrame {
 
         jLabel6.setText("Accounts:");
 
+        jlAccountList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
         jlAccountList.setDoubleBuffered(true);
         jlAccountList.setSelectionMode(javax.swing.DefaultListSelectionModel.SINGLE_SELECTION);
         jlAccountList.setModel(new javax.swing.DefaultListModel<>());
@@ -166,7 +168,6 @@ public class AppGui extends javax.swing.JFrame {
         jLabel7.setText("Inventory:");
 
         invList.setDoubleBuffered(true);
-        invList.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         jScrollPane4.setViewportView(invList);
 
         cbVaulting.setText("Auto Storage");
@@ -286,10 +287,10 @@ public class AppGui extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(btnTrade, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, 35, Short.MAX_VALUE))
-                    .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, 40, Short.MAX_VALUE))
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel5)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -411,7 +412,7 @@ public class AppGui extends javax.swing.JFrame {
                     AppGui.this.logoff();
                 } else {
                     try {
-                        String email = AppGui.this.emailField.getText();
+                        AppGui.this.email = AppGui.this.emailField.getText();
                         String password = new String(AppGui.this.passField.getPassword());
                         String charIdText = AppGui.this.charIdField.getText();
                         int charId = -1;
@@ -425,7 +426,7 @@ public class AppGui extends javax.swing.JFrame {
                         }
                         
                         AppGui.this.logArea.append("Attempting to login..." + newLine);
-                        if(!AppGui.this.client.login(new Account(email, password, charId), GameId.NEXUS)) {
+                        if(!AppGui.this.client.login(new Account(AppGui.this.email, password, charId), GameId.NEXUS)) {
                             throw new Exception("Email or password is invalid.");
                         }
                         
@@ -554,7 +555,7 @@ public class AppGui extends javax.swing.JFrame {
     
     //ROTMG variables
     private final String defaultTitle = "RotMG Clientless";
-    //private String email;
+    private String email;
     //private String password;
     //private int charId;
     private boolean autoStore = true;
@@ -565,6 +566,7 @@ public class AppGui extends javax.swing.JFrame {
     private ServerNode server;
     private Runnable storeTask;
     private Map<String, Account> accounts;
+    private HashMap<Integer, VaultChest> vaultChestsBackup;
     
     private java.util.concurrent.ExecutorService workerPool = java.util.concurrent.Executors.newFixedThreadPool(1);
     private String newLine = System.lineSeparator();
@@ -670,7 +672,7 @@ public class AppGui extends javax.swing.JFrame {
                             for(VaultChest c : client.vaultChests.values()) {
                                 i = 1;
                                 for(Integer item : c.items) {
-                                    listModel.addElement("[C" + c.id + "." + (i++) + "]" + GameData.items.byId(item).name);
+                                    listModel.addElement("[C" + c.id + "." + (i++) + "] " + GameData.items.byId(item).name);
                                 }
                             }
                         }
@@ -682,6 +684,25 @@ public class AppGui extends javax.swing.JFrame {
         };
         AppGui.this.proxy.hookPacket(Packet.PacketType.UPDATE, listUpdate);
         AppGui.this.proxy.hookPacket(Packet.PacketType.NEWTICK, listUpdate);
+        
+        AppGui.this.invList.setCellRenderer(new javax.swing.DefaultListCellRenderer() {
+            @Override
+            public java.awt.Component getListCellRendererComponent(javax.swing.JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                java.awt.Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if(index < 8) {
+                    this.setBackground(java.awt.Color.WHITE);
+                } else if(index > 7 && !((String)value).matches("\\[C.+\\].*")) {
+                    this.setBackground(new java.awt.Color(Integer.decode("0xFFCC99")));
+                } else {
+                    if( ((index / 8) % 2) == 0 && AppGui.this.client.hasBackpack) {
+                        this.setBackground(new java.awt.Color(Integer.decode("0x99FFFF")));
+                    } else {
+                        this.setBackground(new java.awt.Color(Integer.decode("0xFFFF99")));
+                    }
+                }
+                return c;
+            }
+        });
         
         //Upon completed trade, store items if vaulting is enabled.
         AppGui.this.proxy.hookPacket(PacketType.TRADEDONE, new PacketListener() {
@@ -741,6 +762,22 @@ public class AppGui extends javax.swing.JFrame {
                         }
                     });
                 }
+            }
+        });
+        
+        //Upon client disconnect save the vault data of a client.
+        AppGui.this.proxy.hookDisconnect(new ConnectionListener() {
+            @Override
+            public void onConnection(Client client) {
+                AppGui.this.vaultChestsBackup = new HashMap(client.vaultChests);
+            }
+        });
+        
+        //Upon client reconnects, load the old vault chest data.
+        AppGui.this.proxy.hookReconnect(new ConnectionListener() {
+            @Override
+            public void onConnection(Client client) {
+                client.vaultChests = AppGui.this.vaultChestsBackup;
             }
         });
         
@@ -823,8 +860,8 @@ public class AppGui extends javax.swing.JFrame {
                             }
                         }
                     }
-
-                    client.reconnect(GameId.NEXUS);
+                    
+                    client.reconnect(GameId.NEXUS);                    
                     AppGui.this.btnTrade.setEnabled(true);
                     AppGui.this.btnStoreItems.setEnabled(true);
                     AppGui.this.logArea.append("Deposited [" + numItemsStored + "] items in chests..." + newLine);
