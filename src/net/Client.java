@@ -12,8 +12,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import listeners.Proxy;
 import net.packets.Packet;
 import net.packets.PacketReader;
@@ -32,9 +30,9 @@ public class Client {
     private java.io.DataOutputStream serverOutputStream;
     
     private Proxy proxy;
-    public List<Packet> sendQueue;
     private Thread sendThread;
     private Thread receiveThead;
+    public List<Packet> sendQueue;
     
     private boolean connected = false;
     public boolean loggedin = false;
@@ -44,6 +42,7 @@ public class Client {
     private String password;
     public int charId = -1;
     public int objectId = -1;
+    public String accountName;
     public Location position;
     public Location moveToPos;
     public int currentTickTime = 0;
@@ -54,12 +53,11 @@ public class Client {
     public String connectedServerIp = "";
     public ServerNode connectedServer;
     public int port = 2050;
-    //public String server = "ec2-13-57-254-131.us-west-1.compute.amazonaws.com";
-    //public String server = "13.57.254.131";
+    
     public boolean itemListsUpdated = false;
     private Float clientSpeed = 0.5f;
     public Boolean hasBackpack = false;
-    public int itemListLastUpdate = -1;
+    public int vaultDataLastUpdated = -1;
     
     public HashMap<Integer, VaultChest> vaultChests = new HashMap<>(10);
     public ArrayList<Integer> inv = new ArrayList<Integer>(8);
@@ -71,7 +69,6 @@ public class Client {
             this.cipherReceiveServer = new RC4(GameData.keyIn);
             this.proxy = proxy;
             this.sendQueue = new ArrayList<Packet>(40);
-            //this.connectTime = (int)System.currentTimeMillis();
         } catch (Exception e) {
             System.out.println("ERROR::Client: Failed to create Client.");
             e.printStackTrace();
@@ -79,6 +76,7 @@ public class Client {
         }
     }
     
+    //Establish a connection to the server
     public boolean connect(ServerNode sNode) {
         if(sNode == null)
             return false;
@@ -87,11 +85,11 @@ public class Client {
         return this.connect(sNode.ip);
     }
     
+    //Establish a connecdtion to the server
     public boolean connect(String ip) {
         try {
-            //this.serverConnection = new Socket(java.net.InetAddress.getByName(server), this.port);
             this.serverConnection = new Socket();
-            this.serverConnection.connect(new java.net.InetSocketAddress(java.net.Inet4Address.getByName(ip), 2050));
+            this.serverConnection.connect(new java.net.InetSocketAddress(java.net.Inet4Address.getByName(ip), this.port));
             this.serverInputStream = new DataInputStream(this.serverConnection.getInputStream());
             this.serverOutputStream = new DataOutputStream(this.serverConnection.getOutputStream());
             this.connected = true;
@@ -100,7 +98,7 @@ public class Client {
                 System.out.println("Connected to the server...");
             this.connectTime = (int)System.currentTimeMillis();
             
-            //Create thread for sending.
+            //Sends packets
             this.sendThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -119,11 +117,12 @@ public class Client {
                         System.out.println("ERROR::Client: Unable to send packet in send thread.");
                         e.printStackTrace();
                         //throw new java.lang.IllegalStateException("ERROR::Client: Unable to send packet in send thread.");
+                        Client.this.disconnect();
                     }
                 }
             });
             
-            //Receive packets.
+            //Receives packets
             this.receiveThead = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -136,6 +135,7 @@ public class Client {
                         System.out.println("ERROR::Client: Unable to receive packet in receive thead.");
                         e.printStackTrace();
                         //throw new java.lang.IllegalStateException("ERROR::Client: Unable to receive packet in receive thead.");
+                        Client.this.disconnect();
                     }                    
                 }
             });
@@ -150,46 +150,54 @@ public class Client {
         return true;
     }
     
-    public void disconnect() {
-        try {
-            this.connected = false;
-            this.loggedin = false;
-            this.sendThread.join();
-            this.receiveThead.join();
-            this.serverInputStream.close();
-            this.serverOutputStream.close();
-            this.serverConnection.close();
-            //this.serverConnection = null;
-            this.cipherSendServer.reset();
-            this.cipherReceiveServer.reset();
-            this.sendQueue.clear();
-            this.connectedServerName = "UNKNOWN_SERVER_NAME";
-            this.connectedServerIp = "";
-            this.errorId = -1;
-            this.errorMsg = "";
-            //this.charId = -1;
-            this.objectId = -1;
-            this.currentTickTime = 0;
-            this.lastTickTime = 0;
-            this.lastTickId = 0;
-            this.connectTime = 0;
-            this.position = null;
-            this.moveToPos = null;
-            this.vaultChests.clear();       
-            this.inv.clear();
-            this.backpack.clear();
-            System.out.println("NOTICE::Client: Client disconnected.");
-        } catch(Exception e) {
-            System.out.println("ERROR::Client: Failed to disconnect client.");
-            e.printStackTrace();
-            throw new java.lang.IllegalStateException("ERROR::Client: Failed to disconnect client.");
-        }
+    public void disconnect() {        
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if(Client.this.connected) {
+                    try {
+                        Client.this.proxy.fireClientDisconnect(Client.this);
+                        Client.this.connected = false;
+                        Client.this.loggedin = false;
+                        Client.this.sendThread.join();
+                        Client.this.receiveThead.join();
+                        Client.this.serverInputStream.close();
+                        Client.this.serverOutputStream.close();
+                        Client.this.serverConnection.close();
+                        Client.this.cipherSendServer.reset();
+                        Client.this.cipherReceiveServer.reset();
+                        Client.this.sendQueue.clear();
+                        Client.this.connectedServerName = "UNKNOWN_SERVER_NAME";
+                        Client.this.connectedServerIp = "";
+                        Client.this.errorId = -1;
+                        Client.this.errorMsg = "";
+                        //Client.this.charId = -1;
+                        Client.this.objectId = -1;
+                        Client.this.accountName = null;
+                        Client.this.currentTickTime = 0;
+                        Client.this.lastTickTime = 0;
+                        Client.this.lastTickId = 0;
+                        Client.this.connectTime = 0;
+                        Client.this.position = null;
+                        Client.this.moveToPos = null;
+                        Client.this.vaultChests.clear();       
+                        Client.this.inv.clear();
+                        Client.this.backpack.clear();
+                        System.out.println("NOTICE::Client: Client disconnected.");
+                    } catch(Exception e) {
+                        System.out.println("ERROR::Client: Failed to disconnect client.");
+                        e.printStackTrace();
+                        throw new java.lang.IllegalStateException("ERROR::Client: Failed to disconnect client.");
+                    }
+                }
+            }
+        }).start();      
     }
     
     //Note: acc.charId > 0 => use id specified in param account 
     //      acc.charId < 0 => load ids from server
-    //      acc.charid == 0 => create new char
-    public boolean login(Account acc, GameId gameId) throws Exception {
+    //      acc.charid == 0 => create new char (not implemented; possible future implementation)
+    public boolean login(Account acc, GameId gameId) {
         Thread loginTask = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -213,14 +221,20 @@ public class Client {
                             }
                             out.close();
                         }
-                        if(GameData.charIds.size() < 1) {
+                        /*
+                        if(GameData.charIds.isEmpty()) {
                             throw new Exception();
                         }
+                        */
+                        
                         //Client will login first char on list.
                         Client.this.charId = GameData.charIds.get(0);
                     } else if(acc.charId > 0) {
                         Client.this.charId = acc.charId;
                     }
+                    
+                    //notify listeners of beginning of connection
+                    Client.this.proxy.fireClientBeginConnect(Client.this);
                     
                     net.packets.client.HelloPacket hp = new net.packets.client.HelloPacket();
                     hp.buildVersion = GameData.gameVersion;
@@ -245,24 +259,27 @@ public class Client {
                     int time = 0;
                     while(!Client.this.loggedin) {
                         if(time > 10000) {
-                            return; //throw new Exception("Email or password is invalid.");
+                            return;
                         }
                         time += 200;
                         Thread.sleep(200);
                     }
                     
-                    //Remember who logged in.
+                    //Remember who is logged in.
                     Client.this.email = acc.guid;
                     Client.this.password = acc.password;
                 } catch (Exception e) {
                     System.out.println("ERROR::Client: Unable to login.");
                     e.printStackTrace();
-                    //throw new java.lang.IllegalStateException("ERROR::Client: Unable to login.");
                 }
             }
         });
         loginTask.start();
-        loginTask.join();
+        try {
+            loginTask.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return this.loggedin;
     }
     
@@ -285,6 +302,9 @@ public class Client {
                     if(!Client.this.connect(Client.this.connectedServer)) {
                         throw new java.net.ConnectException();
                     }
+                    
+                    //Notify listeners of attempt to reconnect
+                    Client.this.proxy.fireClientReconnect(Client.this);
 
                     //Reconnect to the same character but with @param gameid
                     if(!Client.this.login(new Account(Client.this.email, Client.this.password, Client.this.charId), gameId)) {
@@ -293,11 +313,10 @@ public class Client {
                 } catch(java.net.ConnectException e) {
                     System.out.println("ERROR::Client: Unable to reconnect to the server.");
                     e.printStackTrace();
-                    //throw new java.lang.IllegalStateException("ERROR::Client: Unable to reconnect to the server.");
                 } catch (Exception e) {
                     System.out.println("ERROR::Client: Unable to relog into the same character.");
                     e.printStackTrace();
-                    //throw new java.lang.IllegalStateException("ERROR::Client: Unable to relog into the same character.");
+                    Client.this.disconnect();
                 }
             }            
         });
@@ -444,14 +463,15 @@ public class Client {
     
     //Moves items from inventory to backpack, if there is a backpack and it's not full.
     //NOTE: Backpack slots range from {12, 19] or backpack0 + 12.
-    public void moveItemsToBackpack() {
+    public int moveItemsToBackpack() {
         if(!this.hasBackpack) {
-            return;
+            return 0;
         }
         if(this.isInventoryEmpty() || this.isBackpackFull()) {
-            return;
+            return 0;
         }
         
+        final int[] numItemsMoved = {0};
         Thread moveItems = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -477,6 +497,7 @@ public class Client {
                                     isp.slotObject2.objectType = bItem;
                                     Client.this.sendQueue.add(isp);
                                     b++;
+                                    numItemsMoved[0]++;
                                     System.out.println("From: " + isp.slotObject1);
                                     System.out.println("To: " + isp.slotObject2);
                                     
@@ -492,12 +513,13 @@ public class Client {
                 }
             }
         });
-        
+     
         moveItems.start();
         try {
             moveItems.join();
         } catch (Exception e) {
             System.out.println("ERROR::Client: Failed to move items due to an interruption.");
         }
+        return numItemsMoved[0];
     }
 }
