@@ -1,6 +1,8 @@
 package net.packets.dataobjects;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.packets.PacketReader;
 import net.packets.PacketWriter;
 
@@ -54,13 +56,23 @@ public class Location extends DataObject {
         return (float)Math.atan2(dx, dy);
     }
     
+    public boolean isSameAs(Location other) {
+        if(other == null) {
+            return false;
+        } else if(other == this) {
+            return true;
+        }
+        return ((this.x == other.x) && (this.y == other.y));
+    }
+    
     @Override
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
     }
     
+    
     @Override
     public String toString() {
-        return "{x=" + x + ", y=" + y + " }";
+        return "{x=" + x + ", y=" + y + "}";
     }
 }

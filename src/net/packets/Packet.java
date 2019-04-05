@@ -85,6 +85,12 @@ public abstract class Packet {
                 return new PlayerTextPacket();
             case DAMAGE:
                 return new DamagePacket();
+            case INVSWAP:
+                return new InvSwapPacket();
+            case INVRESULT:
+                return new InvResultPacket();
+            case PLAYSOUND:
+                return new PlaySoundPacket();
             default:
                 System.out.println("ERROR::Packet.java: Unable to create packet of type [" + pType.toString() + "]");
                 return null;

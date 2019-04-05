@@ -1,7 +1,6 @@
 package listeners;
 
 import net.Client;
-import net.Client;
 import net.packets.Packet;
 
 public interface PacketListener {

@@ -2,30 +2,38 @@ package gamedata;
 
 import gamedata.structs.Account;
 import gamedata.structs.AccountNode;
+import gamedata.structs.ItemNode;
 import gamedata.structs.PacketNode;
 import gamedata.structs.ServerNode;
-import java.awt.Desktop;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Scanner;
 import javax.xml.parsers.ParserConfigurationException;
+import net.packets.Packet;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class GameData {
     public static org.w3c.dom.Document rawPacketsXML;
-    //public static org.w3c.dom.Document rawObjectsXML;
+    public static org.w3c.dom.Document rawObjectsXML;
     //public static org.w3c.dom.Document rawTilesXML;
     public static org.w3c.dom.Document rawServersXML;
-    public static org.w3c.dom.Document rawCharListXML;
+    //public static org.w3c.dom.Document rawCharListXML; //Outdated; there is no need to store this XML
     
-    public static GameDataMap<Byte, PacketNode> packets; 
-    public static GameDataMap<String, ServerNode> servers; //maps server abbr to server nodes
+    public static GameDataMap<Byte, PacketNode> packets;   //maps packet id to packet node
+    public static GameDataMap<String, ServerNode> servers; //maps server name to server node
+    public static GameDataMap<Integer, ItemNode> items;    //maps item id to item node
     
-    //IMPORTANT: Must always be checked to see if they are initialized.
+    //IMPORTANT: Must always be checked to see if it is initialized.
     public static ArrayList<Integer> charIds;
+    
+    public static String gameVersion = "X0.0.0";
+    public static String keyOut;
+    public static String keyIn;
     
     //Store XML documents in memory since accessors are slow.
     static{
@@ -33,13 +41,33 @@ public class GameData {
             System.out.println("NOTICE::GameData: Loading xml data...");
             javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
             javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
+            Reader inputFileCharStream;           
             
-            rawPacketsXML = builder.parse(new java.io.BufferedInputStream(new java.io.FileInputStream("includes/res/packets.xml")));
-            //rawObjectsXML = builder.parse(new java.io.BufferedInputStream(new java.io.FileInputStream("includes/res/objects.xml")));
-            //rawTilesXML = builder.parse(new java.io.BufferedInputStream(new java.io.FileInputStream("includes/res/tiles.xml")));
-            rawServersXML = builder.parse(new java.io.BufferedInputStream(new java.io.FileInputStream("includes/res/servers.xml")));
-        } catch (ParserConfigurationException | SAXException | IOException ex) {
-            Logger.getLogger(GameData.class.getName()).log(Level.SEVERE, null, ex);
+            //Explicitly load the xml data as UTF-8; prevents parsing errors.
+            inputFileCharStream = new InputStreamReader(new BufferedInputStream(new FileInputStream("res/packets.xml")), "UTF-8");
+            rawPacketsXML = builder.parse(new InputSource(inputFileCharStream));            
+            inputFileCharStream = new InputStreamReader(new BufferedInputStream(new FileInputStream("res/servers.xml")), "UTF-8");
+            rawServersXML = builder.parse(new InputSource(inputFileCharStream));            
+            inputFileCharStream = new InputStreamReader(new BufferedInputStream(new FileInputStream("res/objects.xml")), "UTF-8");
+            rawObjectsXML = builder.parse(new InputSource(inputFileCharStream));
+            
+            //Load game version
+            Scanner in = new Scanner(new java.io.File("res/gameVersion.txt"));
+            GameData.gameVersion = in.nextLine();
+            System.out.println("Loaded game version: [" + GameData.gameVersion + "]");
+            in.close();
+            
+            //Load RC4 keys
+            in = new Scanner(new java.io.File("res/keys.txt"));
+            GameData.keyOut = in.nextLine();
+            GameData.keyIn = in.nextLine();
+            System.out.println("Read keys(out, in): " + GameData.keyOut + ", " + GameData.keyIn);
+            in.close();
+            
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            System.out.println("ERROR::GameData: Failed to load static XML data...");
+            e.printStackTrace();
+            throw new java.lang.IllegalStateException("ERROR::GameData: Failed to load static XML data...");
         }        
     }
     
@@ -51,7 +79,9 @@ public class GameData {
            protected void compute() {
                GameData.packets = new GameDataMap<Byte, PacketNode>(PacketNode.load(rawPacketsXML));
                //Custom packet represents unknown packet types.
-               packets.map.put((byte)255, new PacketNode(net.packets.Packet.PacketType.UNKNOWN.toString(), 255, net.packets.Packet.PacketType.UNKNOWN));
+               packets.map.put((byte)255, new PacketNode(Packet.PacketType.UNKNOWN.toString(), 255, Packet.PacketType.UNKNOWN));
+               System.out.println("Notice::GameData: " + GameData.packets.size() + " Packets loaded.");
+               rawPacketsXML = null;
            }
         });
         
@@ -59,8 +89,22 @@ public class GameData {
             @Override
             protected void compute() {
                 GameData.servers = new GameDataMap<String, ServerNode>(ServerNode.load(rawServersXML));
+                System.out.println("Notice::GameData: " + GameData.servers.size() + " Servers loaded.");
+                rawServersXML = null;
             }
-        });        
+        });
+        
+        //Load items
+        pool.invoke(new java.util.concurrent.RecursiveAction() {
+            @Override
+            protected void compute() {
+                GameData.items = new GameDataMap<Integer, ItemNode>(ItemNode.load(rawObjectsXML));               
+                //Custom item to indicate empty inv.
+                GameData.items.map.put(-1, new ItemNode("EMPTY", -1));                
+                System.out.println("Notice::GameData: " + GameData.items.size() + " Items loaded.");
+                rawObjectsXML = null;
+            }
+        });
         
         pool.shutdown();
     }
@@ -69,15 +113,24 @@ public class GameData {
         try {
             javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
             javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
-            String url = "http://www.realmofthemadgod.com/char/list?guid=" + account.guid.replaceAll("\\+", "%2B") + "&password=" + account.password + "&version=31";
-            GameData.rawCharListXML = builder.parse(new java.io.BufferedInputStream(new java.net.URL(url).openStream()));
-            GameData.charIds = AccountNode.allCharacterIdList(GameData.rawCharListXML);
-            System.out.println("Printing character id list: ");
-            for(int i : GameData.charIds) {
-                System.out.println(i);
-            }            
-        } catch (Exception e) {
-            e.printStackTrace();
+            String url = "http://www.realmofthemadgod.com/char/list?guid=" + 
+                         account.guid.replaceAll("\\+", "%2B") + "&password=" + account.password + "&version=31";
+            //GameData.rawCharListXML = builder.parse(new java.io.BufferedInputStream(new java.net.URL(url).openStream()));
+            GameData.charIds = AccountNode.allCharacterIdList(builder.parse(new java.io.BufferedInputStream(new java.net.URL(url).openStream())));
+            
+            if(GameData.charIds.isEmpty()) {
+                throw new java.lang.IllegalStateException();
+            } else {
+                System.out.print("Printing character id list: [");
+                for(int i = 0; i < GameData.charIds.size(); i++) {
+                    System.out.print(GameData.charIds.get(i) + (i==(GameData.charIds.size()-1)? "]\n" : ", "));
+                }  
+            }
+                   
+        } catch (ParserConfigurationException | IOException | SAXException | java.lang.IllegalStateException e) {
+            System.out.println("ERROR::GameData: Failed to load character IDs...");
+            //e.printStackTrace();
+            throw new java.lang.IllegalStateException("ERROR::GameData: Failed to load character IDs...");
         }
     }
     
@@ -103,12 +156,9 @@ public class GameData {
             return null;
         }
         
-        /*
-        //NOTE: This requires that PacketType's string is equivalent to name of the packet.
-        //NOTE2: This does not work for ServerNode since it has no 'PacketType' field.
-        public NodeType byType(net.packets.Packet.PacketType packetType) {
-            return byName(packetType.toString());
+        public int size() {
+            return map.size();
         }
-        */
     }
+    
 }

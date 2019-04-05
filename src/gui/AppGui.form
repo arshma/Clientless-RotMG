@@ -391,6 +391,9 @@
                 </Property>
                 <Property name="doubleBuffered" type="boolean" value="true"/>
               </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_AddingCodePost" type="java.lang.String" value="AppGui.this.invList.setCellRenderer(new javax.swing.DefaultListCellRenderer() {&#xa;    @Override&#xa;    public java.awt.Component getListCellRendererComponent(javax.swing.JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {&#xa;        java.awt.Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);&#xa;        if(index &lt; 8) {&#xa;            this.setBackground(AppGui.INVENTORY_COLOR);&#xa;        } else if(index &gt; 7 &amp;&amp; !((String)value).matches(&quot;\\[C.+\\].*&quot;)) {&#xa;            this.setBackground(AppGui.BAG_COLOR);&#xa;        } else {&#xa;            boolean startTest = ((index / 8) % 2) == 0;&#xa;            if(!AppGui.this.client.hasBackpack) {&#xa;                startTest = !startTest;&#xa;            }&#xa;            if( startTest ) {&#xa;                this.setBackground(AppGui.CHEST_COLOR_1);&#xa;            } else {&#xa;                this.setBackground(AppGui.CHEST_COLOR_2);&#xa;            }&#xa;        }&#xa;        return c;&#xa;    }&#xa;});"/>
+              </AuxValues>
             </Component>
           </SubComponents>
         </Container>

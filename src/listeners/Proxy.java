@@ -17,15 +17,21 @@ import net.packets.dataobjects.Status;
 import net.packets.dataobjects.VaultChest;
 import net.packets.server.*;
 
-//This class maintains lists of all the listerners that need to be informed upon a certain event.
+//This class maintains lists listerners that need to be informed upon events.
 public class Proxy {
-    private ArrayList<PacketListener> serverPacketReceived;
-    private Map<PacketType, ArrayList<PacketListener>> packetHooks;
+    private final ArrayList<ConnectionListener> clientBeginConnect;
+    private final ArrayList<ConnectionListener> clientDisconnect;
+    private final ArrayList<ConnectionListener> clientReconnect;
+    private final ArrayList<PacketListener> serverPacketReceived;
+    private final Map<PacketType, ArrayList<PacketListener>> packetHooks;
     
     
     public Proxy() {
         this.packetHooks = new HashMap<PacketType, ArrayList<PacketListener>>(20);
         this.serverPacketReceived = new ArrayList<PacketListener>(5);
+        this.clientBeginConnect = new ArrayList<ConnectionListener>(5);
+        this.clientDisconnect = new ArrayList<ConnectionListener>(5);
+        this.clientReconnect = new ArrayList<ConnectionListener>(5);        
         
         this.defaultHooks();
         System.out.println("Number of different packets being hooked: " + this.packetHooks.size());
@@ -35,7 +41,6 @@ public class Proxy {
     //Registers listeners/callbacks for specified packet types.
     //Single packet type can be associated with multiple callback/listeners objects.
     public void hookPacket(PacketType pType, PacketListener listener) {
-        //check invalid packet types.
         PacketNode pNode = GameData.packets.byName(pType.toString());
         if(pNode == null) {
             System.out.println("ERROR::Proxy.java: Packet type not supported for hooking.");
@@ -53,20 +58,58 @@ public class Proxy {
         }
     }
     
+    //Registers listeners for when client attempts connection to the server, but before it's connected
+    public void hookBeginConnect(ConnectionListener listener) {
+        this.clientBeginConnect.add(listener);
+    }
+    
+    //Registers listeners for when client disconnects from server
+    public void hookDisconnect(ConnectionListener listener) {
+        this.clientDisconnect.add(listener);
+    }
+    
+    //Registers listeners for when client attempts to reconnect to sever.
+    public void hookReconnect(ConnectionListener listener) {
+        this.clientReconnect.add(listener);
+    }
+    
     //Notifys registered listeners/callbacks when a packet is received from the server.
     public void fireServerPacket(Client client, Packet packet) {
-        //Notify listeners/callbacks when a server packet is received(regardless of type/hooks packets). --needs implementation        
+        if(packet == null) { return; }        
         
         ArrayList<PacketListener> listeners = this.packetHooks.get(packet.type());
         if(listeners == null) {
-            System.out.println("ERROR::proxy.java: Unable to initiate listeners for packet of type '" + packet.type().toString() + "'");
+            System.out.println("NOTICE::proxy.java: Unable to initiate listeners for packet of type '" + packet.type().toString() + "'");
             return;
-        }        
-        for(PacketListener pl : listeners) {
+        }
+        for(PacketListener pl : listeners) {        
             pl.onPacketReceived(client, packet);
         }
     }
     
+    //Notify registered listeners of when client attempts connection to the server, but before it's connected
+    public void fireClientBeginConnect(Client client) {
+        for(ConnectionListener listener : this.clientBeginConnect) {
+            listener.onConnection(client);
+        }
+    }
+    
+    //Notify registered listeners of client disconnecting from server.
+    public void fireClientDisconnect(Client client) {
+        for(ConnectionListener listener : this.clientDisconnect) {
+            listener.onConnection(client);
+        }
+    }
+    
+    //Notify registered listeners of client reconnecting.
+    public void fireClientReconnect(Client client) {
+        for(ConnectionListener listener : this.clientReconnect) {
+            listener.onConnection(client);
+        }
+    }
+    
+    
+    //Basic hooks needed to maintain connection and perfrom essential tasks.
     private void defaultHooks() {
         //Add default listeners
         this.hookPacket(PacketType.MAPINFO, new PacketListener() {
@@ -108,6 +151,8 @@ public class Proxy {
                                 if(sd.type == StatData.StatsType.HasBackpack) {
                                     client.hasBackpack = (sd.intValue > 0);
                                     System.out.println("NOTICE::Proxy: Client has a backpack: [" + (sd.intValue > 0) + "]");
+                                } else if(sd.type == StatData.StatsType.Name) {
+                                    client.accountName = sd.stringValue;
                                 }
                             }
                             break;
@@ -193,8 +238,9 @@ public class Proxy {
                 client.errorId = fp.errorId;
                 client.errorMsg = fp.errorMessage + ""; //creates a new string rather than referencing old one.
                 System.out.println("Faliure ID: [" + fp.errorId + "], errMsg: [" + fp.errorMessage + "]");
-                //Logout upon failure
-                client.disconnect();
+                //Logout upon client outdated failure.
+                if(fp.errorId == 4)
+                    client.disconnect();
             }
         });
         this.hookPacket(PacketType.GOTO, new PacketListener() {
@@ -263,7 +309,7 @@ public class Proxy {
                         }
                         client.vaultChests.put(ent.status.objectId, chest);
                         client.itemListsUpdated = true;
-                        client.itemListLastUpdate = client.getTime();
+                        client.vaultDataLastUpdated = client.getTime();
                         /*
                         System.out.println("CHEST ITEM ORDER: [");
                         for(int i = 0; i < chest.size(); i++) {
@@ -317,7 +363,7 @@ public class Proxy {
                         }
                         client.vaultChests.put(s.objectId, chest);
                         client.itemListsUpdated = true;
-                        client.itemListLastUpdate = client.getTime();
+                        client.vaultDataLastUpdated = client.getTime();
                         
                         //move char to main chest
                         //client.moveToPos.x = 44.5f;
@@ -335,39 +381,14 @@ public class Proxy {
             }
         }); 
         
+        //TESTING
         this.hookPacket(PacketType.INVRESULT, new PacketListener() {
             @Override
             public void onPacketReceived(Client client, Packet packet) {
                 InvResultPacket irp = (InvResultPacket)packet;
                 System.out.println("InvSwap result: [" + irp.result + "]");
             }
-        });
-        
-        //Accepts trade when other player accepts trade
-        this.hookPacket(PacketType.TRADEACCEPTED, new PacketListener() {
-            @Override
-            public void onPacketReceived(Client client, Packet packet) {
-                TradeAcceptedPacket tap = (TradeAcceptedPacket)packet;
-                /*
-                System.out.print("My offers: [");
-                for(boolean b : tap.myOffers) {
-                    System.out.print(b + ", ");
-                }
-                System.out.println();
-                
-                System.out.print("Partner's offers: [");
-                for(boolean b : tap.partnerOffers) {
-                    System.out.print(b + ", ");
-                }
-                System.out.println();   
-                */
-                AcceptTradePacket atp = new AcceptTradePacket();
-                atp.myOffers = tap.myOffers;
-                atp.yourOffers = tap.partnerOffers;
-                client.sendQueue.add(atp);
-            }
-        });
-        
+        });        
         this.hookPacket(PacketType.TRADEDONE, new PacketListener() {
             @Override
             public void onPacketReceived(Client client, Packet packet) {

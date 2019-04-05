@@ -71,7 +71,7 @@ public class Client {
             this.sendQueue = new ArrayList<Packet>(40);
         } catch (Exception e) {
             System.out.println("ERROR::Client: Failed to create Client.");
-            e.printStackTrace();
+            //e.printStackTrace();
             throw new java.lang.IllegalStateException("ERROR::Client: Failed to create Client.");
         }
     }
@@ -115,7 +115,7 @@ public class Client {
                         }
                     } catch(Exception e) {
                         System.out.println("ERROR::Client: Unable to send packet in send thread.");
-                        e.printStackTrace();
+                        //e.printStackTrace();
                         //throw new java.lang.IllegalStateException("ERROR::Client: Unable to send packet in send thread.");
                         Client.this.disconnect();
                     }
@@ -133,7 +133,7 @@ public class Client {
                         }
                     } catch(IOException e) {
                         System.out.println("ERROR::Client: Unable to receive packet in receive thead.");
-                        e.printStackTrace();
+                        //e.printStackTrace();
                         //throw new java.lang.IllegalStateException("ERROR::Client: Unable to receive packet in receive thead.");
                         Client.this.disconnect();
                     }                    
@@ -144,7 +144,7 @@ public class Client {
             this.receiveThead.start();           
         } catch(Exception e) {
             System.out.println("ERROR:Client: Unable to connect to the server.");
-            e.printStackTrace();
+            //e.printStackTrace();
             return false;
         }
         return true;
@@ -203,7 +203,7 @@ public class Client {
             public void run() {
                 try {
                     if(acc.charId < 0) {
-                        String path = "" + acc.guid + ".acc";
+                        String path = "res/temp/" + acc.guid + ".acc";
                         java.io.File accFile = new java.io.File(path);
 
                         if(accFile.exists()) {
@@ -220,12 +220,7 @@ public class Client {
                                 out.writeInt(i);
                             }
                             out.close();
-                        }
-                        /*
-                        if(GameData.charIds.isEmpty()) {
-                            throw new Exception();
-                        }
-                        */
+                        }                      
                         
                         //Client will login first char on list.
                         Client.this.charId = GameData.charIds.get(0);
@@ -270,7 +265,7 @@ public class Client {
                     Client.this.password = acc.password;
                 } catch (Exception e) {
                     System.out.println("ERROR::Client: Unable to login.");
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 }
             }
         });
@@ -312,10 +307,10 @@ public class Client {
                     }
                 } catch(java.net.ConnectException e) {
                     System.out.println("ERROR::Client: Unable to reconnect to the server.");
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 } catch (Exception e) {
                     System.out.println("ERROR::Client: Unable to relog into the same character.");
-                    e.printStackTrace();
+                    //e.printStackTrace();
                     Client.this.disconnect();
                 }
             }            
@@ -462,7 +457,7 @@ public class Client {
     }
     
     //Moves items from inventory to backpack, if there is a backpack and it's not full.
-    //NOTE: Backpack slots range from {12, 19] or backpack0 + 12.
+    //NOTE: Backpack slots range from {12, 19] or backpack + 12.
     public int moveItemsToBackpack() {
         if(!this.hasBackpack) {
             return 0;
@@ -509,7 +504,7 @@ public class Client {
                     }
                 } catch(CloneNotSupportedException | InterruptedException e) {
                     System.out.println("ERROR::Client: Failed to move items from inventory to backpack.");
-                    e.printStackTrace();
+                    //e.printStackTrace();
                 }
             }
         });

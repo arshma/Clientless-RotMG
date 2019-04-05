@@ -17,11 +17,13 @@ import listeners.Proxy;
 import net.Client;
 import net.packets.Packet;
 import net.packets.Packet.PacketType;
+import net.packets.client.AcceptTradePacket;
 import net.packets.client.InvSwapPacket;
 import net.packets.dataobjects.Location;
 import net.packets.dataobjects.SlotObject;
 import net.packets.dataobjects.VaultChest;
 import net.packets.server.FailurePacket;
+import net.packets.server.TradeAcceptedPacket;
 import net.packets.server.TradeDonePacket;
 import util.Constants.GameId;
 
@@ -169,6 +171,28 @@ public class AppGui extends javax.swing.JFrame {
 
         invList.setDoubleBuffered(true);
         jScrollPane4.setViewportView(invList);
+        AppGui.this.invList.setCellRenderer(new javax.swing.DefaultListCellRenderer() {
+            @Override
+            public java.awt.Component getListCellRendererComponent(javax.swing.JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                java.awt.Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if(index < 8) {
+                    this.setBackground(AppGui.INVENTORY_COLOR);
+                } else if(index > 7 && !((String)value).matches("\\[C.+\\].*")) {
+                    this.setBackground(AppGui.BAG_COLOR);
+                } else {
+                    boolean startTest = ((index / 8) % 2) == 0;
+                    if(!AppGui.this.client.hasBackpack) {
+                        startTest = !startTest;
+                    }
+                    if( startTest ) {
+                        this.setBackground(AppGui.CHEST_COLOR_1);
+                    } else {
+                        this.setBackground(AppGui.CHEST_COLOR_2);
+                    }
+                }
+                return c;
+            }
+        });
 
         cbVaulting.setText("Auto Storage");
         cbVaulting.setToolTipText("When enabled, stores items in vault after each trade.");
@@ -526,10 +550,10 @@ public class AppGui extends javax.swing.JFrame {
                 mainWin.setLocationRelativeTo(null);
                 
                 ArrayList<java.awt.Image> list = new ArrayList<>();
-                list.add(Toolkit.getDefaultToolkit().createImage("includes/img/icon1.png"));
-                list.add(Toolkit.getDefaultToolkit().createImage("includes/img/icon2.png"));
-                list.add(Toolkit.getDefaultToolkit().createImage("includes/img/icon3.png"));
-                list.add(Toolkit.getDefaultToolkit().createImage("includes/img/icon4.png"));
+                list.add(Toolkit.getDefaultToolkit().createImage(getClass().getResource("/images/icon_16.png")));
+                list.add(Toolkit.getDefaultToolkit().createImage(getClass().getResource("/images/icon_32.png")));
+                list.add(Toolkit.getDefaultToolkit().createImage(getClass().getResource("/images/icon_64.png")));
+                list.add(Toolkit.getDefaultToolkit().createImage(getClass().getResource("/images/icon_128.png")));                
                 mainWin.setIconImages(list);
                 
                 mainWin.setVisible(true);
@@ -556,8 +580,6 @@ public class AppGui extends javax.swing.JFrame {
     //ROTMG variables
     private final String defaultTitle = "RotMG Clientless";
     private String email;
-    //private String password;
-    //private int charId;
     private boolean autoStore = true;
     
     private Proxy proxy;
@@ -567,6 +589,10 @@ public class AppGui extends javax.swing.JFrame {
     private Runnable storeTask;
     private Map<String, Account> accounts;
     private HashMap<Integer, VaultChest> vaultChestsBackup;
+    private final static java.awt.Color INVENTORY_COLOR = java.awt.Color.WHITE;
+    private final static java.awt.Color BAG_COLOR = new java.awt.Color(Integer.decode("0xFFFF99"));
+    private final static java.awt.Color CHEST_COLOR_1 = new java.awt.Color(Integer.decode("0x66FFFF"));
+    private final static java.awt.Color CHEST_COLOR_2 = new java.awt.Color(Integer.decode("0xCCFFFF"));
     
     private java.util.concurrent.ExecutorService workerPool = java.util.concurrent.Executors.newFixedThreadPool(1);
     private String newLine = System.lineSeparator();
@@ -649,34 +675,36 @@ public class AppGui extends javax.swing.JFrame {
     }
     
     private void setListeners() {
-        //Detects item list change via 'Update' and 'NewTick' packets.
+        //Detects item list change via 'Update' and 'NewTick' packets and updates item list in GUI
         PacketListener listUpdate = new PacketListener() {
             @Override
             public void onPacketReceived(Client client, Packet packet) {
                 if(client.itemListsUpdated) {
                     javax.swing.DefaultListModel<String> listModel = new javax.swing.DefaultListModel<String>();
                     System.out.println("Vault chests size: " + client.vaultChests.size());
-                    if(AppGui.this.client.inv.size() > 0 || AppGui.this.client.backpack.size() > 0) {
-                        //listModel.addElement("Chest #" + entry.getKey());
-                        int i = 1;
-                        for(Integer item : AppGui.this.client.inv) {
+                    
+                    int i = 1;
+                    for(Integer item : AppGui.this.client.inv) {
+                        listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
+                    }
+                    if(client.hasBackpack) {
+                        for(Integer item : AppGui.this.client.backpack) {
                             listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
                         }
-                        if(client.hasBackpack) {
-                            for(Integer item : AppGui.this.client.backpack) {
-                                listModel.addElement("[" + (i++) + "]  " + gamedata.GameData.items.byId(item).name);
-                            }
-                        }
-                        
-                        if(client.vaultChests.size() > 0) {
-                            for(VaultChest c : client.vaultChests.values()) {
-                                i = 1;
-                                for(Integer item : c.items) {
-                                    listModel.addElement("[C" + c.id + "." + (i++) + "] " + GameData.items.byId(item).name);
-                                }
+                    }
+                    if(client.vaultChests.size() > 0) {
+                        ArrayList<Integer> orderedChests = new ArrayList(client.vaultChests.keySet());
+                        Collections.sort(orderedChests);
+                        for(Integer id : orderedChests) {
+                            VaultChest c = client.vaultChests.get(id);
+                            if(c == null) { continue; }
+                            i = 1;
+                            for(Integer item : c.items) {
+                                listModel.addElement("[C" + c.id + "." + (i++) + "] " + GameData.items.byId(item).name);
                             }
                         }
                     }
+                    
                     AppGui.this.invList.setModel(listModel);
                     client.itemListsUpdated = false;
                 }
@@ -685,24 +713,19 @@ public class AppGui extends javax.swing.JFrame {
         AppGui.this.proxy.hookPacket(Packet.PacketType.UPDATE, listUpdate);
         AppGui.this.proxy.hookPacket(Packet.PacketType.NEWTICK, listUpdate);
         
-        AppGui.this.invList.setCellRenderer(new javax.swing.DefaultListCellRenderer() {
+        //Accepts trade when other player accepts trade
+        AppGui.this.proxy.hookPacket(PacketType.TRADEACCEPTED, new PacketListener() {
             @Override
-            public java.awt.Component getListCellRendererComponent(javax.swing.JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                java.awt.Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if(index < 8) {
-                    this.setBackground(java.awt.Color.WHITE);
-                } else if(index > 7 && !((String)value).matches("\\[C.+\\].*")) {
-                    this.setBackground(new java.awt.Color(Integer.decode("0xFFCC99")));
-                } else {
-                    if( ((index / 8) % 2) == 0 && AppGui.this.client.hasBackpack) {
-                        this.setBackground(new java.awt.Color(Integer.decode("0x99FFFF")));
-                    } else {
-                        this.setBackground(new java.awt.Color(Integer.decode("0xFFFF99")));
-                    }
-                }
-                return c;
+            public void onPacketReceived(Client client, Packet packet) {
+                TradeAcceptedPacket tap = (TradeAcceptedPacket)packet;
+                
+                AcceptTradePacket atp = new AcceptTradePacket();
+                atp.myOffers = tap.myOffers;
+                atp.yourOffers = tap.partnerOffers;
+                client.sendQueue.add(atp);
             }
         });
+ 
         
         //Upon completed trade, store items if vaulting is enabled.
         AppGui.this.proxy.hookPacket(PacketType.TRADEDONE, new PacketListener() {
@@ -729,7 +752,7 @@ public class AppGui extends javax.swing.JFrame {
         });
         
         
-        //Load the GUI login info from saved accounts list
+        //Load login info from saved accounts list
         AppGui.this.jlAccountList.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -771,8 +794,7 @@ public class AppGui extends javax.swing.JFrame {
             public void onConnection(Client client) {
                 AppGui.this.vaultChestsBackup = new HashMap(client.vaultChests);
             }
-        });
-        
+        });        
         //Upon client reconnects, load the old vault chest data.
         AppGui.this.proxy.hookReconnect(new ConnectionListener() {
             @Override
@@ -876,7 +898,7 @@ public class AppGui extends javax.swing.JFrame {
         HashMap<String, Account> accMap = new HashMap<>(10);
         java.io.BufferedReader br = null;
         try {
-            br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("includes/res/accounts2.json"), "UTF-8"));
+            br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("res/accounts.json"), "UTF-8"));
             String json = "";
             String line;
             while((line = br.readLine()) != null) {
@@ -926,7 +948,7 @@ public class AppGui extends javax.swing.JFrame {
         java.io.BufferedReader br = null;
         java.io.BufferedWriter bw = null;
         try {
-            br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("includes/res/accounts2.json"), "UTF-8"));
+            br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("res/accounts.json"), "UTF-8"));
             String json = "";
             String line;
             while((line = br.readLine()) != null) {
@@ -941,7 +963,7 @@ public class AppGui extends javax.swing.JFrame {
                                                                  "\",\"charid\": " + newCharId + "}");
             arr.put(newJo);
             jo.put("accounts", arr);
-            bw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream("includes/res/accounts2.json")));
+            bw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream("res/accounts.json")));
             bw.write(jo.toString());
             bw.close();
             AppGui.this.logArea.append("Saved account info for account [" + newEmail + "]" + newLine);
@@ -975,7 +997,7 @@ public class AppGui extends javax.swing.JFrame {
         java.io.BufferedReader br = null;
         java.io.BufferedWriter bw = null;
         try {
-            br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("includes/res/accounts2.json"), "UTF-8"));
+            br = new java.io.BufferedReader(new java.io.InputStreamReader(new java.io.FileInputStream("res/accounts.json"), "UTF-8"));
             String json = "";
             String line;
             while((line = br.readLine()) != null) {
@@ -992,7 +1014,7 @@ public class AppGui extends javax.swing.JFrame {
                 }
             }
             jo.put("accounts", arr);
-            bw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream("includes/res/accounts2.json")));
+            bw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream("res/accounts.json")));
             bw.write(jo.toString());
             bw.close();
             AppGui.this.logArea.append("Removed saved account [" + entry + "] from list." + newLine);

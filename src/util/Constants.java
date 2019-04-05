@@ -207,4 +207,29 @@ public class Constants {
             return null;
         }
     }
+    
+    public enum GameId {
+        NEXUS(-2),
+        RANDOMREALM(-3),
+        VAULT(-5),
+        DAILYQUESTROOM(-11);
+        
+        private final int val;
+        private GameId(int val) {
+            this.val = val;
+        }
+        
+        public int getValue() {
+            return this.val;
+        }
+        
+        public static GameId getConst(int value) {
+            for(GameId id : GameId.values()) {
+                if(id.val == value) {
+                    return id;
+                }
+            }
+            return null;
+        }
+    }
 }
