@@ -94,6 +94,7 @@ public class AppGui extends javax.swing.JFrame {
         );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setResizable(false);
 
         jPanel1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
@@ -155,6 +156,7 @@ public class AppGui extends javax.swing.JFrame {
         javax.swing.text.DefaultCaret caret = (javax.swing.text.DefaultCaret)logArea.getCaret();
         caret.setUpdatePolicy(javax.swing.text.DefaultCaret.ALWAYS_UPDATE);
         logArea.setCaret(caret);
+        logArea.setMinimumSize(new java.awt.Dimension(4, 17));
         jScrollPane2.setViewportView(logArea);
 
         jLabel5.setText("Log:");
@@ -175,6 +177,9 @@ public class AppGui extends javax.swing.JFrame {
             @Override
             public java.awt.Component getListCellRendererComponent(javax.swing.JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 java.awt.Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if(isSelected) {
+                    c.setForeground(java.awt.Color.RED);
+                }
                 if(index < 8) {
                     this.setBackground(AppGui.INVENTORY_COLOR);
                 } else if(index > 7 && !((String)value).matches("\\[C.+\\].*")) {
@@ -190,6 +195,7 @@ public class AppGui extends javax.swing.JFrame {
                         this.setBackground(AppGui.CHEST_COLOR_2);
                     }
                 }
+
                 return c;
             }
         });
@@ -311,7 +317,7 @@ public class AppGui extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(btnTrade, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, 40, Short.MAX_VALUE))
+                        .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, 39, Short.MAX_VALUE))
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -443,8 +449,12 @@ public class AppGui extends javax.swing.JFrame {
                         if(!charIdText.equals("")) {
                             charId = Integer.parseInt(charIdText);
                         }
+                        if(AppGui.this.server == null) {
+                            AppGui.this.logArea.append("ERROR: No server selected." + newLine);
+                            return;
+                        }
 
-                        AppGui.this.logArea.append("Attempting to connect to server..." + newLine);
+                        AppGui.this.logArea.append("Attempting to connect to server...[" + AppGui.this.server.name + "]" +newLine);
                         if(!AppGui.this.client.connect(AppGui.this.server)) {
                             throw new java.net.ConnectException();
                         }
@@ -661,14 +671,14 @@ public class AppGui extends javax.swing.JFrame {
                     
                     AppGui.this.btnLogin.setEnabled(true);
                     
-                } catch(Exception e) {
-                    AppGui.this.logArea.append("Unable to initialize client..." + newLine);
-                    AppGui.this.btnLogin.setEnabled(false);
-                    AppGui.this.logArea.setForeground(java.awt.Color.RED);
-                    for(StackTraceElement ste : e.getStackTrace()) {
-                        AppGui.this.logArea.append(ste.toString() + newLine);
+                } catch(Exception | java.lang.ExceptionInInitializerError e) {
+                    AppGui.this.logArea.append("Unable to initialize client...");
+                    if(e instanceof java.lang.ExceptionInInitializerError) {
+                        AppGui.this.logArea.append("[" + e.getCause().getMessage() + "]");
                     }
-                    AppGui.this.logArea.setForeground(java.awt.Color.BLACK);
+                    AppGui.this.logArea.append(newLine);                
+                    AppGui.this.btnLogin.setEnabled(false);
+                    AppGui.this.jMenu1.setEnabled(false);
                 }
             }
         });

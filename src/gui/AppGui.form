@@ -71,6 +71,7 @@
   </NonVisualComponents>
   <Properties>
     <Property name="defaultCloseOperation" type="int" value="3"/>
+    <Property name="resizable" type="boolean" value="false"/>
   </Properties>
   <SyntheticProperties>
     <SyntheticProperty name="menuBar" type="java.lang.String" value="jMenuBar1"/>
@@ -231,7 +232,7 @@
                           <EmptySpace type="unrelated" max="-2" attributes="0"/>
                           <Component id="btnTrade" min="-2" pref="38" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="btnStoreItems" pref="40" max="32767" attributes="0"/>
+                          <Component id="btnStoreItems" pref="39" max="32767" attributes="0"/>
                       </Group>
                       <Component id="jScrollPane3" alignment="0" pref="0" max="32767" attributes="0"/>
                       <Component id="jScrollPane4" alignment="0" pref="0" max="32767" attributes="0"/>
@@ -337,6 +338,9 @@
                 </Property>
                 <Property name="rows" type="int" value="5"/>
                 <Property name="doubleBuffered" type="boolean" value="true" postCode="javax.swing.text.DefaultCaret caret = (javax.swing.text.DefaultCaret)logArea.getCaret();&#xa;caret.setUpdatePolicy(javax.swing.text.DefaultCaret.ALWAYS_UPDATE);&#xa;logArea.setCaret(caret);"/>
+                <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+                  <Dimension value="[4, 17]"/>
+                </Property>
               </Properties>
             </Component>
           </SubComponents>
@@ -392,7 +396,7 @@
                 <Property name="doubleBuffered" type="boolean" value="true"/>
               </Properties>
               <AuxValues>
-                <AuxValue name="JavaCodeGenerator_AddingCodePost" type="java.lang.String" value="AppGui.this.invList.setCellRenderer(new javax.swing.DefaultListCellRenderer() {&#xa;    @Override&#xa;    public java.awt.Component getListCellRendererComponent(javax.swing.JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {&#xa;        java.awt.Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);&#xa;        if(index &lt; 8) {&#xa;            this.setBackground(AppGui.INVENTORY_COLOR);&#xa;        } else if(index &gt; 7 &amp;&amp; !((String)value).matches(&quot;\\[C.+\\].*&quot;)) {&#xa;            this.setBackground(AppGui.BAG_COLOR);&#xa;        } else {&#xa;            boolean startTest = ((index / 8) % 2) == 0;&#xa;            if(!AppGui.this.client.hasBackpack) {&#xa;                startTest = !startTest;&#xa;            }&#xa;            if( startTest ) {&#xa;                this.setBackground(AppGui.CHEST_COLOR_1);&#xa;            } else {&#xa;                this.setBackground(AppGui.CHEST_COLOR_2);&#xa;            }&#xa;        }&#xa;        return c;&#xa;    }&#xa;});"/>
+                <AuxValue name="JavaCodeGenerator_AddingCodePost" type="java.lang.String" value="AppGui.this.invList.setCellRenderer(new javax.swing.DefaultListCellRenderer() {&#xa;    @Override&#xa;    public java.awt.Component getListCellRendererComponent(javax.swing.JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {&#xa;        java.awt.Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);&#xa;        if(isSelected) {&#xa;            c.setForeground(java.awt.Color.RED);&#xa;        }&#xa;        if(index &lt; 8) {&#xa;            this.setBackground(AppGui.INVENTORY_COLOR);&#xa;        } else if(index &gt; 7 &amp;&amp; !((String)value).matches(&quot;\\[C.+\\].*&quot;)) {&#xa;            this.setBackground(AppGui.BAG_COLOR);&#xa;        } else {&#xa;            boolean startTest = ((index / 8) % 2) == 0;&#xa;            if(!AppGui.this.client.hasBackpack) {&#xa;                startTest = !startTest;&#xa;            }&#xa;            if( startTest ) {&#xa;                this.setBackground(AppGui.CHEST_COLOR_1);&#xa;            } else {&#xa;                this.setBackground(AppGui.CHEST_COLOR_2);&#xa;            }&#xa;        }&#xa;        &#xa;        return c;&#xa;    }&#xa;});"/>
               </AuxValues>
             </Component>
           </SubComponents>
