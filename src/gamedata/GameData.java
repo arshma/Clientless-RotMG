@@ -66,13 +66,13 @@ public class GameData {
             
         } catch (ParserConfigurationException | SAXException | IOException e) {
             System.out.println("ERROR::GameData: Failed to load static XML data...");
-            e.printStackTrace();
-            throw new java.lang.IllegalStateException("ERROR::GameData: Failed to load static XML data...");
+            //e.printStackTrace();
+            throw new java.lang.IllegalStateException("Failed to load game XML data");
         }        
     }
     
     //Initialize static game data from XMLs.
-    public static void load() {
+    public static void load() {        
         java.util.concurrent.ForkJoinPool pool = new java.util.concurrent.ForkJoinPool();
         pool.invoke(new java.util.concurrent.RecursiveAction() {
            @Override
