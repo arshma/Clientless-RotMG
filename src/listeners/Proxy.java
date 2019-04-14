@@ -5,6 +5,7 @@ import gamedata.structs.PacketNode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import net.Client;
 import net.packets.Packet;
 import net.packets.Packet.*;
@@ -19,6 +20,7 @@ import net.packets.server.*;
 
 //This class maintains lists listerners that need to be informed upon events.
 public class Proxy {
+    private static final java.util.logging.Logger logger = util.Logger.getLogger(Proxy.class.getSimpleName());
     private final ArrayList<ConnectionListener> clientBeginConnect;
     private final ArrayList<ConnectionListener> clientDisconnect;
     private final ArrayList<ConnectionListener> clientReconnect;
@@ -34,7 +36,7 @@ public class Proxy {
         this.clientReconnect = new ArrayList<ConnectionListener>(5);        
         
         this.defaultHooks();
-        System.out.println("Number of different packets being hooked: " + this.packetHooks.size());
+        Proxy.logger.log(Level.FINE, () -> "Number of different packets being hooked: " + this.packetHooks.size());
     }    
 
     
@@ -43,12 +45,13 @@ public class Proxy {
     public void hookPacket(PacketType pType, PacketListener listener) {
         PacketNode pNode = GameData.packets.byName(pType.toString());
         if(pNode == null) {
-            System.out.println("ERROR::Proxy.java: Packet type not supported for hooking.");
-            return;
+            Proxy.logger.log(Level.SEVERE, () -> "Failed to hook null packet");
+            throw new java.lang.IllegalArgumentException("Failed to hook null packet");
         }
             
         if(pNode.packetType == PacketType.UNKNOWN) {
-            throw new java.lang.IllegalArgumentException();
+            Proxy.logger.log(Level.SEVERE, () -> "Failed to hook UNKNOWN packet");
+            throw new java.lang.IllegalArgumentException("Failed to hook UNKNOWN packet");
         } else if(this.packetHooks.containsKey(pType)) {
             this.packetHooks.get(pType).add(listener);
         } else {
@@ -78,8 +81,8 @@ public class Proxy {
         if(packet == null) { return; }        
         
         ArrayList<PacketListener> listeners = this.packetHooks.get(packet.type());
-        if(listeners == null) {
-            System.out.println("NOTICE::proxy.java: Unable to initiate listeners for packet of type '" + packet.type().toString() + "'");
+        if(listeners == null) {            
+            Proxy.logger.log(Level.FINE, () -> "Unable to initiate listeners for packet of type '" + packet.type().toString() + "'");
             return;
         }
         for(PacketListener pl : listeners) {        
@@ -118,8 +121,8 @@ public class Proxy {
                 LoadPacket loadPacket = (LoadPacket)Packet.create(PacketType.LOAD);
                 loadPacket.characterId = client.charId;
                 loadPacket.isFromArena = false;
-                client.sendQueue.add(loadPacket);
-                System.out.println("Connected to map: [" + ((MapInfoPacket)packet).name + "], loading: " + loadPacket.characterId);
+                client.sendQueue.add(loadPacket);                
+                Proxy.logger.log(Level.FINE, () -> "Connected to map: [" + ((MapInfoPacket)packet).name + "], loading Char ID: " + loadPacket.characterId);
             }
         });
         this.hookPacket(PacketType.CREATESUCCESS, new PacketListener() {
@@ -128,6 +131,7 @@ public class Proxy {
                 CreateSuccessPacket csp = (CreateSuccessPacket)packet;
                 client.objectId = csp.objectId;
                 client.charId = csp.charId;
+                client.moveToPos = null;
                 client.loggedin = true;
             }
         });
@@ -142,23 +146,22 @@ public class Proxy {
                 for(Entity ent : up.newObjs) {
                     if(ent.status.objectId == client.objectId) {
                         try {
-                            client.position = (Location)ent.status.position.clone();
-                            System.out.println("NOTICE::Proxy.java: Client location updated by 'Update' packet." + client.position);
+                            client.position = (Location)ent.status.position.clone();        
+                            Proxy.logger.log(Level.INFO, () -> "Client location updated by 'Update' packet." + client.position);
                             if(client.moveToPos == null) {
                                 client.moveToPos = (Location)ent.status.position.clone();
                             }
                             for(StatData sd : ent.status.data) {
                                 if(sd.type == StatData.StatsType.HasBackpack) {
-                                    client.hasBackpack = (sd.intValue > 0);
-                                    System.out.println("NOTICE::Proxy: Client has a backpack: [" + (sd.intValue > 0) + "]");
+                                    client.hasBackpack = (sd.intValue > 0);                                    
+                                    Proxy.logger.log(Level.INFO, () -> "Client has a backpack: [" + (sd.intValue > 0) + "]");
                                 } else if(sd.type == StatData.StatsType.Name) {
                                     client.accountName = sd.stringValue;
                                 }
                             }
                             break;
                         } catch (CloneNotSupportedException e) {
-                            System.out.println("ERROR::Proxy.java: Unable to set char position");
-                            e.printStackTrace();
+                            Proxy.logger.log(Level.WARNING, "Failed to clone 'Location' from update packet");
                         }
                     }
                 }
@@ -175,7 +178,7 @@ public class Proxy {
                     for(Status s : ntp.statuses) {
                         if(client.objectId == s.objectId) {
                             client.position = (Location)s.position.clone();
-                            System.out.println("NOTICE::Proxy.java: Client location updated by 'NewTick' packet." + client.position);
+                            Proxy.logger.log(Level.INFO, () -> "Client location updated by 'NewTick' packet." + client.position);
                             break;
                         }
                     }                   
@@ -183,7 +186,7 @@ public class Proxy {
                     MovePacket movePacket = (MovePacket)Packet.create(PacketType.MOVE);  
                     movePacket.tickId = client.lastTickId;
                     movePacket.time = client.getTime();
-                    
+
                     //Determine new location to move to. Movement restricted by client spd.
                     if(client.position.isSameAs(client.moveToPos)) {
                         movePacket.newPosition = (Location)client.position.clone();
@@ -213,10 +216,9 @@ public class Proxy {
                     movePacket.records = new ArrayList<LocationRecord>();
                     client.sendQueue.add(movePacket);
                     
-                    System.out.println("Replied to Tick [" + client.lastTickId + "] Time since last ticket: [" + client.lastTickTime + "]");
+                    Proxy.logger.log(Level.FINE, () -> "Replied to Tick [" + client.lastTickId + "] Time since last ticket: [" + client.lastTickTime + "]");
                 } catch (CloneNotSupportedException e) {
-                    System.out.println("ERROR::Proxy.java: Unable to set location. 'Move' packet not sent.");
-                    e.printStackTrace();
+                    Proxy.logger.log(Level.WARNING, () -> "Unable to set location. 'Move' packet not sent.");
                 }
             }
         });
@@ -236,11 +238,8 @@ public class Proxy {
             public void onPacketReceived(Client client, Packet packet) {
                 FailurePacket fp = (FailurePacket)packet;
                 client.errorId = fp.errorId;
-                client.errorMsg = fp.errorMessage + ""; //creates a new string rather than referencing old one.
-                System.out.println("Faliure ID: [" + fp.errorId + "], errMsg: [" + fp.errorMessage + "]");
-                //Logout upon client outdated failure.
-                if(fp.errorId == 4)
-                    client.disconnect();
+                client.errorMsg = fp.errorMessage;
+                Proxy.logger.log(Level.INFO, () -> "Faliure ID: [" + fp.errorId + "], errMsg: [" + fp.errorMessage + "]");
             }
         });
         this.hookPacket(PacketType.GOTO, new PacketListener() {
@@ -255,11 +254,10 @@ public class Proxy {
                     GotoPacket gp = (GotoPacket)packet;
                     if(client.objectId == gp.objectId) {
                         client.position = (Location)gp.location.clone();
-                        System.out.println("NOTICE::Proxy.java: Client location updated by 'Goto' packet." + client.position);
+                        Proxy.logger.log(Level.INFO, () -> "Client location updated by 'Goto' packet." + client.position);
                     }
                 } catch(java.lang.CloneNotSupportedException e) {
-                    System.out.println("ERROR::Proxy.java: Unable to update client location by 'Goto Packet'.");
-                    e.printStackTrace();
+                    Proxy.logger.log(Level.WARNING, "Failed to update client location by 'Goto' Packet.");
                 }
             }
         });
@@ -276,28 +274,36 @@ public class Proxy {
                             //Ignore first 4 inv slots which refer to player equip slots in this context
                             if(sd.type >= StatData.StatsType.Inventory4 && sd.type <= StatData.StatsType.Inventory11) {
                                 client.inv.add(sd.type - StatData.StatsType.Inventory4, sd.intValue);
+                                client.itemListsUpdated = true;
                             } else if(sd.type >= StatData.StatsType.Backpack0 && sd.type <= StatData.StatsType.Backpack7) {
                                 client.backpack.add(sd.type - StatData.StatsType.Backpack0, sd.intValue);
+                                client.itemListsUpdated = true;
                             }
                         }
-                        System.out.print("INV: [");
-                        for(int i = 0; i < client.inv.size(); i++) {
-                            System.out.print(GameData.items.byId(client.inv.get(i)).name + (i == client.inv.size()-1? "]\n" : ", "));
-                        }
-                        System.out.print("BACKPACK: [");
-                        for(int i = 0; i < client.backpack.size(); i++) {
-                            System.out.print(GameData.items.byId(client.backpack.get(i)).name + (i == client.backpack.size()-1? "]\n" : ", "));
-                        }
-                        client.itemListsUpdated = true;
+                        if(client.itemListsUpdated && Proxy.logger.isLoggable(Level.FINE)) {
+                            StringBuilder itemList = new StringBuilder(100);
+                            Proxy.logger.log(Level.FINE, () -> "UPDATED INV: ");
+                            for(int i = 0; i < client.inv.size(); i++) {
+                                itemList.append(GameData.items.byId(client.inv.get(i)).name + (i == client.inv.size()-1? "]" : ", "));
+                            }
+                            Proxy.logger.log(Level.FINE, () -> itemList.toString());
+                            
+                            Proxy.logger.log(Level.FINE, () -> "UPDATED BACKPACK: ");
+                            itemList.delete(0, itemList.length());
+                            for(int i = 0; i < client.backpack.size(); i++) {
+                                itemList.append(GameData.items.byId(client.backpack.get(i)).name + (i == client.backpack.size()-1? "]" : ", "));
+                            }
+                            Proxy.logger.log(Level.FINE, () -> itemList.toString());
+                        }                        
+                        //client.itemListsUpdated = true;
                     }
                     //Loads vault chest data
                     else if(ent.objectType == 0x0504) {
-                        System.out.println("Chest ID is: " + ent.status.objectId);
-                        System.out.println("Items: ");
+                        Proxy.logger.log(Level.INFO, () -> "Chest ID is: " + ent.status.objectId + "; Chest pos: " + ent.status.position);
                         ArrayList<Integer> chestItems = new ArrayList<>(8);
                         for(StatData sd : ent.status.data) {
                             if(sd.type >= StatData.StatsType.Inventory0 && sd.type <= StatData.StatsType.Inventory7) {
-                                System.out.println(sd.type + "\t" + GameData.items.byId(sd.intValue).name);
+                                Proxy.logger.log(Level.INFO, () -> (sd.type - StatData.StatsType.Inventory0) + "\t" + GameData.items.byId(sd.intValue).name);
                                 chestItems.add(sd.type - StatData.StatsType.Inventory0, sd.intValue);
                             }
                         }
@@ -305,19 +311,12 @@ public class Proxy {
                         try {
                             chest = new VaultChest(ent.status.objectId, (Location)ent.status.position.clone(), chestItems);
                         } catch (CloneNotSupportedException e) {
+                            Proxy.logger.log(Level.WARNING, e, () -> "Failed to clone chest location in UPDATE packet. Setting to default.");
                             chest = new VaultChest(ent.status.objectId, Location.empty(), chestItems);
                         }
                         client.vaultChests.put(ent.status.objectId, chest);
                         client.itemListsUpdated = true;
                         client.vaultDataLastUpdated = client.getTime();
-                        /*
-                        System.out.println("CHEST ITEM ORDER: [");
-                        for(int i = 0; i < chest.size(); i++) {
-                            System.out.println("\t" + GameData.items.byId(chest.get(i)).name);
-                        }
-                        */
-                        //System.out.println("Item added to the map");
-                        //client.vaultChests.size();
                     }
                 }
             }
@@ -335,67 +334,64 @@ public class Proxy {
                             //Ignore first 4 inventory slots which refer to player equip slots in this context
                             if(sd.type >= StatData.StatsType.Inventory4 && sd.type <= StatData.StatsType.Inventory11) {
                                 client.inv.set(sd.type - StatData.StatsType.Inventory4, sd.intValue);
+                                client.itemListsUpdated = true;
                             } else if(sd.type >= StatData.StatsType.Backpack0 && sd.type <= StatData.StatsType.Backpack7) {
                                 client.backpack.set(sd.type - StatData.StatsType.Backpack0, sd.intValue);
+                                client.itemListsUpdated = true;
                             }
                         }
-                        System.out.print("INV: [");
-                        for(int i = 0; i < client.inv.size(); i++) {
-                            System.out.print(GameData.items.byId(client.inv.get(i)).name + (i == client.inv.size()-1? "]\n" : ", "));
+                        if(client.itemListsUpdated && Proxy.logger.isLoggable(Level.FINE)) {
+                            StringBuilder itemList = new StringBuilder(100);
+                            Proxy.logger.log(Level.FINE, () -> "UPDATED INV: ");
+                            for(int i = 0; i < client.inv.size(); i++) {
+                                itemList.append(GameData.items.byId(client.inv.get(i)).name + (i == client.inv.size()-1? "]" : ", "));
+                            }
+                            Proxy.logger.log(Level.FINE, () -> itemList.toString());
+                            
+                            Proxy.logger.log(Level.FINE, () -> "UPDATED BACKPACK: ");
+                            itemList.delete(0, itemList.length());
+                            for(int i = 0; i < client.backpack.size(); i++) {
+                                itemList.append(GameData.items.byId(client.backpack.get(i)).name + (i == client.backpack.size()-1? "]" : ", "));
+                            }
+                            Proxy.logger.log(Level.FINE, () -> itemList.toString());
                         }
-                        System.out.print("BACKPACK: [");
-                        for(int i = 0; i < client.backpack.size(); i++) {
-                            System.out.print(GameData.items.byId(client.backpack.get(i)).name + (i == client.backpack.size()-1? "]\n" : ", "));
-                        }
-                        client.itemListsUpdated = true;
+                        //client.itemListsUpdated = true;
                     }
                     //Update vault chest data
                     else if(client.vaultChests.containsKey(s.objectId)) {
-                        System.out.println("Chest ID is: " + s.objectId);
-                        System.out.println("Chest pos: [" + s.position + "]");
-                        System.out.println("Items: ");
+                        Proxy.logger.log(Level.INFO, () -> "Chest ID is: " + s.objectId + "; Chest pos: [" + s.position + "]");
                         VaultChest chest = client.vaultChests.get(s.objectId);
                         for(StatData sd : s.data) {
                             if(sd.type >= StatData.StatsType.Inventory0 && sd.type <= StatData.StatsType.Inventory7) {
-                                System.out.println(sd.type + "\t" + GameData.items.byId(sd.intValue).name);
+                                Proxy.logger.log(Level.INFO, () -> (sd.type - StatData.StatsType.Inventory0) + "\t" + GameData.items.byId(sd.intValue).name);
                                 chest.items.set(sd.type - StatData.StatsType.Inventory0, sd.intValue);                                
                             }
                         }
                         client.vaultChests.put(s.objectId, chest);
                         client.itemListsUpdated = true;
                         client.vaultDataLastUpdated = client.getTime();
-                        
-                        //move char to main chest
-                        //client.moveToPos.x = 44.5f;
-                        //client.moveToPos.y = 70.5f;
-                        /*
-                        System.out.println("CHEST ITEM ORDER: [");
-                        for(int i = 0; i < chest.size(); i++) {
-                            System.out.println("\t" + GameData.items.byId(chest.get(i)).name);
-                        }
-                        */
-                        //System.out.println("Item added to the map");
-                        //client.vaultChests.size();
                     }
                 }
             }
         }); 
         
-        //TESTING
+        
+        /*
         this.hookPacket(PacketType.INVRESULT, new PacketListener() {
             @Override
             public void onPacketReceived(Client client, Packet packet) {
                 InvResultPacket irp = (InvResultPacket)packet;
-                System.out.println("InvSwap result: [" + irp.result + "]");
+                Proxy.logger.log(Level.FINE, () -> "InvSwap result: [" + irp.result + "]");
             }
         });        
         this.hookPacket(PacketType.TRADEDONE, new PacketListener() {
             @Override
             public void onPacketReceived(Client client, Packet packet) {
                 TradeDonePacket tdp = (TradeDonePacket)packet;
-                System.out.println(tdp.result + ", " + tdp.message);
+                Proxy.logger.log(Level.FINE, () -> tdp.result + ", " + tdp.message);
             }
         });
+        */
     }
     
 }
