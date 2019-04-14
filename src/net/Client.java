@@ -12,6 +12,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
 import listeners.Proxy;
 import net.packets.Packet;
 import net.packets.PacketReader;
@@ -23,6 +24,7 @@ import net.packets.dataobjects.VaultChest;
 import util.Constants.GameId;
 
 public class Client {
+    private static final java.util.logging.Logger logger = util.Logger.getLogger(Client.class.getSimpleName());
     private RC4 cipherSendServer;
     private RC4 cipherReceiveServer;
     private java.net.Socket serverConnection;
@@ -55,7 +57,8 @@ public class Client {
     public int port = 2050;
     
     public boolean itemListsUpdated = false;
-    private Float clientSpeed = 0.5f;
+    public boolean isReconnecting = false;
+    private Float clientSpeed = 1.0f;
     public Boolean hasBackpack = false;
     public int vaultDataLastUpdated = -1;
     
@@ -70,9 +73,8 @@ public class Client {
             this.proxy = proxy;
             this.sendQueue = new ArrayList<Packet>(40);
         } catch (Exception e) {
-            System.out.println("ERROR::Client: Failed to create Client.");
-            //e.printStackTrace();
-            throw new java.lang.IllegalStateException("ERROR::Client: Failed to create Client.");
+            Client.logger.log(Level.SEVERE, e, () -> "Failed to create client");
+            throw new java.lang.IllegalStateException("Failed to create Client.");
         }
     }
     
@@ -95,7 +97,7 @@ public class Client {
             this.connected = true;
             this.connectedServerIp = ip;
             if(this.serverConnection.isConnected())
-                System.out.println("Connected to the server...");
+                Client.logger.log(Level.FINE, () -> "Client connected to server...");
             this.connectTime = (int)System.currentTimeMillis();
             
             //Sends packets
@@ -105,7 +107,7 @@ public class Client {
                     try {
                         while(Client.this.connected && Client.this.serverConnection.isConnected()) {
                             long start = System.currentTimeMillis();
-                            while(Client.this.sendQueue.size() != 0) {
+                            while(!Client.this.sendQueue.isEmpty()) {
                                 Packet pkt = Client.this.sendQueue.remove(0);
                                 Client.this.send(pkt);
                             }
@@ -113,10 +115,8 @@ public class Client {
                             int time = (int)(end - start);
                             Thread.sleep(100 - (time > 100? 0 : time));
                         }
-                    } catch(Exception e) {
-                        System.out.println("ERROR::Client: Unable to send packet in send thread.");
-                        //e.printStackTrace();
-                        //throw new java.lang.IllegalStateException("ERROR::Client: Unable to send packet in send thread.");
+                    } catch(IOException | InterruptedException e) {
+                        Client.logger.log(Level.WARNING, e, () -> "Unable to send packet in send thread.");
                         Client.this.disconnect();
                     }
                 }
@@ -132,9 +132,7 @@ public class Client {
                             Client.this.proxy.fireServerPacket(Client.this, pkt);
                         }
                     } catch(IOException e) {
-                        System.out.println("ERROR::Client: Unable to receive packet in receive thead.");
-                        //e.printStackTrace();
-                        //throw new java.lang.IllegalStateException("ERROR::Client: Unable to receive packet in receive thead.");
+                        Client.logger.log(Level.WARNING, e, () -> "Unable to receive packet in receive thead.");
                         Client.this.disconnect();
                     }                    
                 }
@@ -142,9 +140,8 @@ public class Client {
             
             this.sendThread.start();
             this.receiveThead.start();           
-        } catch(Exception e) {
-            System.out.println("ERROR:Client: Unable to connect to the server.");
-            //e.printStackTrace();
+        } catch(IOException e) {
+            Client.logger.log(Level.WARNING, e, () -> "Unable to connect to the server.");
             return false;
         }
         return true;
@@ -156,8 +153,8 @@ public class Client {
             public void run() {
                 if(Client.this.connected) {
                     try {
-                        Client.this.proxy.fireClientDisconnect(Client.this);
                         Client.this.connected = false;
+                        Client.this.proxy.fireClientDisconnect(Client.this);
                         Client.this.loggedin = false;
                         Client.this.sendThread.join();
                         Client.this.receiveThead.join();
@@ -183,11 +180,11 @@ public class Client {
                         Client.this.vaultChests.clear();       
                         Client.this.inv.clear();
                         Client.this.backpack.clear();
-                        System.out.println("NOTICE::Client: Client disconnected.");
+                        //Client.this.sendQueue.clear();
+                        Client.logger.log(Level.INFO, () -> "Client disconnected.");
                     } catch(Exception e) {
-                        System.out.println("ERROR::Client: Failed to disconnect client.");
-                        e.printStackTrace();
-                        throw new java.lang.IllegalStateException("ERROR::Client: Failed to disconnect client.");
+                        Client.logger.log(Level.SEVERE, e, () -> "Failed to disconnect client.");
+                        throw new java.lang.IllegalStateException("Failed to disconnect client.");
                     }
                 }
             }
@@ -253,7 +250,8 @@ public class Client {
 
                     int time = 0;
                     while(!Client.this.loggedin) {
-                        if(time > 10000) {
+                        if(time > 10000 || (!Client.this.connected)) {
+                            Client.logger.log(Level.INFO, () -> "Terminating login.");
                             return;
                         }
                         time += 200;
@@ -264,8 +262,7 @@ public class Client {
                     Client.this.email = acc.guid;
                     Client.this.password = acc.password;
                 } catch (Exception e) {
-                    System.out.println("ERROR::Client: Unable to login.");
-                    //e.printStackTrace();
+                    Client.logger.log(Level.WARNING, e, () -> "Failed to login.");
                 }
             }
         });
@@ -273,7 +270,7 @@ public class Client {
         try {
             loginTask.join();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Client.logger.log(Level.WARNING, e, () -> "Login method join failed");
         }
         return this.loggedin;
     }
@@ -287,15 +284,24 @@ public class Client {
                     if(!Client.this.connected || !Client.this.loggedin) {
                         return;
                     }
+                    Client.this.isReconnecting = true;
+                    
                     //disconnect from previous connection
                     Client.this.disconnect();
                     
-                    //give server sufficient time to terminate connection
-                    Thread.sleep(500);
+                    //give server sufficient time to terminate connection fully
+                    int time = 0;
+                    while(Client.this.connected || Client.this.loggedin) {
+                        if(time > 3000) {
+                            return;
+                        }
+                        time += 500;
+                        Thread.sleep(500);
+                    }
 
                     //Reconnect to the same server
                     if(!Client.this.connect(Client.this.connectedServer)) {
-                        throw new java.net.ConnectException();
+                        return;
                     }
                     
                     //Notify listeners of attempt to reconnect
@@ -303,15 +309,22 @@ public class Client {
 
                     //Reconnect to the same character but with @param gameid
                     if(!Client.this.login(new Account(Client.this.email, Client.this.password, Client.this.charId), gameId)) {
-                        throw new Exception();
+                        Client.this.disconnect();
+                        return;
                     }
-                } catch(java.net.ConnectException e) {
-                    System.out.println("ERROR::Client: Unable to reconnect to the server.");
-                    //e.printStackTrace();
-                } catch (Exception e) {
-                    System.out.println("ERROR::Client: Unable to relog into the same character.");
-                    //e.printStackTrace();
+                    
+                    /*
+                    //Wait for account name to be set; this is first update packet.
+                    while(Client.this.accountName == null) {
+                        Client.logger.log(Level.INFO, () -> "Account name not set yet.");
+                        Thread.sleep(150);
+                    }
+                    */
+                } catch (InterruptedException e) {
+                    Client.logger.log(Level.WARNING, e, () -> "Unable to reconnect to the server");
                     Client.this.disconnect();
+                } finally {
+                    Client.this.isReconnecting = false;
                 }
             }            
         });
@@ -320,9 +333,9 @@ public class Client {
         try {
             reconnectTask.join();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Client.logger.log(Level.WARNING, e, () -> "Reconnect method failed");
         }
-        return this.loggedin;        
+        return this.connected && this.loggedin;        
     }
     
     public boolean isLoggedIn() {
@@ -371,10 +384,11 @@ public class Client {
         
         if(packet != null) {
             packet.read(new PacketReader(decryptedData));
+            Client.logger.log(Level.INFO, () -> "Finished reading: " + pNode.name + ", id: " + pNode.id + ", bytes: " + (encryptedData.length + 5));
         } else {
-            System.out.println("ERROR::Client: Unable to create packet for storing data.");
-        }
-        System.out.println("Finished reading: " + pNode.name + ", id: " + pNode.id + ", bytes: " + (encryptedData.length + 5));
+            Client.logger.log(Level.WARNING, () -> "Unable to create packet for storing data.");
+        }        
+        
         return packet; 
     }
     
@@ -382,7 +396,7 @@ public class Client {
         PacketWriter w = new PacketWriter(50000);
         packet.write(w);
         
-        byte[] data = w.getArray(); //This will always return an array even when no data to write.
+        byte[] data = w.getArray(); //This will always return an array even when no data to write(array of size 0).
         //NOTE: The java cipher lib returns 'null' when byte[] is of size 0
         byte[] encryptedData = this.cipherSendServer.cipher(data); 
         if(encryptedData == null) {
@@ -390,14 +404,15 @@ public class Client {
         }
         PacketNode pNode = GameData.packets.byName(packet.type().toString());
         if(pNode == null) {
-            System.out.println("ERROR::Client: Unable to get 'PacketNode' by packet name.");
+            Client.logger.log(Level.SEVERE, () -> "Unable to get 'PacketNode' by packet name. Failed to send packet.");
+            throw new java.lang.NullPointerException("Failed to send a packet"); 
         }
         
         this.serverOutputStream.writeInt(encryptedData.length + 5);
         this.serverOutputStream.writeByte(pNode.id);
         this.serverOutputStream.write(encryptedData);
         this.serverOutputStream.flush();
-        System.out.println("Sent packet name: " + pNode.name + ", id: " + pNode.id + ", bytes: " + (encryptedData.length+5));
+        Client.logger.log(Level.FINE, () -> "Sent packet name: " + pNode.name + ", id: " + pNode.id + ", bytes: " + (data.length + 5));
     }
     
     public void moveToFreely(Location loc) {
@@ -493,8 +508,8 @@ public class Client {
                                     Client.this.sendQueue.add(isp);
                                     b++;
                                     numItemsMoved[0]++;
-                                    System.out.println("From: " + isp.slotObject1);
-                                    System.out.println("To: " + isp.slotObject2);
+                                    //System.out.println("From: " + isp.slotObject1);
+                                    //System.out.println("To: " + isp.slotObject2);
                                     
                                     Thread.sleep(650);                                    
                                     break;
@@ -503,8 +518,7 @@ public class Client {
                         }
                     }
                 } catch(CloneNotSupportedException | InterruptedException e) {
-                    System.out.println("ERROR::Client: Failed to move items from inventory to backpack.");
-                    //e.printStackTrace();
+                    Client.logger.log(Level.WARNING, e, () -> "Failed to move items from inventory to backpack");
                 }
             }
         });
@@ -512,8 +526,8 @@ public class Client {
         moveItems.start();
         try {
             moveItems.join();
-        } catch (Exception e) {
-            System.out.println("ERROR::Client: Failed to move items due to an interruption.");
+        } catch (InterruptedException e) {
+            Client.logger.log(Level.WARNING, e, () -> "MoveItemsBackToBackpack method failed");
         }
         return numItemsMoved[0];
     }
