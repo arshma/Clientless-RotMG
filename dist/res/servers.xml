@@ -174,11 +174,11 @@
             <DNS>54.215.251.128</DNS>
             <Lat>0.00</Lat>
             <Long>0.00</Long>
-            <Usage>0.75</Usage>
+            <Usage>0.00</Usage>
         </Server>
     </Servers>
-    <Lat>37.77</Lat>
-    <Long>-122.24</Long>
+    <Lat>37.67</Lat>
+    <Long>-122.08</Long>
     <ClassAvailabilityList>
         <ClassAvailability id="Rogue">available</ClassAvailability>
         <ClassAvailability id="Assassin">available</ClassAvailability>

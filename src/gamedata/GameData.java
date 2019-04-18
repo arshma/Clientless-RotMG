@@ -12,12 +12,14 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.logging.Level;
 import javax.xml.parsers.ParserConfigurationException;
 import net.packets.Packet;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class GameData {
+    public static final java.util.logging.Logger logger = util.Logger.getLogger(GameData.class.getSimpleName());
     public static org.w3c.dom.Document rawPacketsXML;
     public static org.w3c.dom.Document rawObjectsXML;
     //public static org.w3c.dom.Document rawTilesXML;
@@ -38,7 +40,7 @@ public class GameData {
     //Store XML documents in memory since accessors are slow.
     static{
         try {
-            System.out.println("NOTICE::GameData: Loading xml data...");
+            GameData.logger.log(Level.FINE, () -> "Loading XML data...");
             javax.xml.parsers.DocumentBuilderFactory factory = javax.xml.parsers.DocumentBuilderFactory.newInstance();
             javax.xml.parsers.DocumentBuilder builder = factory.newDocumentBuilder();
             Reader inputFileCharStream;           
@@ -54,19 +56,18 @@ public class GameData {
             //Load game version
             Scanner in = new Scanner(new java.io.File("res/gameVersion.txt"));
             GameData.gameVersion = in.nextLine();
-            System.out.println("Loaded game version: [" + GameData.gameVersion + "]");
             in.close();
+            GameData.logger.log(Level.INFO, () -> "Loaded game version: [" + GameData.gameVersion + "]");
             
             //Load RC4 keys
             in = new Scanner(new java.io.File("res/keys.txt"));
-            GameData.keyOut = in.nextLine();
+            GameData.keyOut = in.nextLine(); 
             GameData.keyIn = in.nextLine();
-            System.out.println("Read keys(out, in): " + GameData.keyOut + ", " + GameData.keyIn);
             in.close();
+            GameData.logger.log(Level.INFO, () -> "Read keys(out, in): " + GameData.keyOut + ", " + GameData.keyIn);
             
         } catch (ParserConfigurationException | SAXException | IOException e) {
-            System.out.println("ERROR::GameData: Failed to load static XML data...");
-            //e.printStackTrace();
+            GameData.logger.log(Level.SEVERE, e, () -> "ERROR::GameData: Failed to load static XML data...");
             throw new java.lang.IllegalStateException("Failed to load game XML data");
         }        
     }
@@ -80,7 +81,7 @@ public class GameData {
                GameData.packets = new GameDataMap<Byte, PacketNode>(PacketNode.load(rawPacketsXML));
                //Custom packet represents unknown packet types.
                packets.map.put((byte)255, new PacketNode(Packet.PacketType.UNKNOWN.toString(), 255, Packet.PacketType.UNKNOWN));
-               System.out.println("Notice::GameData: " + GameData.packets.size() + " Packets loaded.");
+               GameData.logger.log(Level.INFO, () -> GameData.packets.size() + " Packets loaded");
                rawPacketsXML = null;
            }
         });
@@ -89,7 +90,7 @@ public class GameData {
             @Override
             protected void compute() {
                 GameData.servers = new GameDataMap<String, ServerNode>(ServerNode.load(rawServersXML));
-                System.out.println("Notice::GameData: " + GameData.servers.size() + " Servers loaded.");
+                GameData.logger.log(Level.INFO, () -> GameData.servers.size() + " Servers loaded");
                 rawServersXML = null;
             }
         });
@@ -101,7 +102,7 @@ public class GameData {
                 GameData.items = new GameDataMap<Integer, ItemNode>(ItemNode.load(rawObjectsXML));               
                 //Custom item to indicate empty inv.
                 GameData.items.map.put(-1, new ItemNode("EMPTY", -1));                
-                System.out.println("Notice::GameData: " + GameData.items.size() + " Items loaded.");
+                GameData.logger.log(Level.INFO, () -> GameData.items.size() + " Items loaded");
                 rawObjectsXML = null;
             }
         });
@@ -118,19 +119,20 @@ public class GameData {
             //GameData.rawCharListXML = builder.parse(new java.io.BufferedInputStream(new java.net.URL(url).openStream()));
             GameData.charIds = AccountNode.allCharacterIdList(builder.parse(new java.io.BufferedInputStream(new java.net.URL(url).openStream())));
             
-            if(GameData.charIds.isEmpty()) {
+            if(GameData.charIds == null || GameData.charIds.isEmpty()) {
+                GameData.logger.log(Level.WARNING, () -> "Unable to load char Ids. Rethrowing exception.");
                 throw new java.lang.IllegalStateException();
-            } else {
-                System.out.print("Printing character id list: [");
+            } else if(GameData.logger.isLoggable(Level.INFO)){
+                StringBuilder idList = new StringBuilder("Printing character id list: [");
                 for(int i = 0; i < GameData.charIds.size(); i++) {
-                    System.out.print(GameData.charIds.get(i) + (i==(GameData.charIds.size()-1)? "]\n" : ", "));
-                }  
+                    idList.append(GameData.charIds.get(i) + (i==(GameData.charIds.size()-1)? "]" : ", "));
+                }
+                GameData.logger.log(Level.INFO, () -> idList.toString());
             }
-                   
+                  
         } catch (ParserConfigurationException | IOException | SAXException | java.lang.IllegalStateException e) {
-            System.out.println("ERROR::GameData: Failed to load character IDs...");
-            //e.printStackTrace();
-            throw new java.lang.IllegalStateException("ERROR::GameData: Failed to load character IDs...");
+            GameData.logger.log(Level.WARNING, e, () -> "Failed to load character IDs...");
+            throw new java.lang.IllegalStateException("Failed to load character IDs");
         }
     }
     

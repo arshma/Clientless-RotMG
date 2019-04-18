@@ -4,14 +4,12 @@ import gamedata.GameData;
 import gamedata.structs.Account;
 import gamedata.structs.ServerNode;
 import java.awt.Toolkit;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import listeners.ConnectionListener;
 import listeners.PacketListener;
 import listeners.Proxy;
@@ -601,7 +599,7 @@ public class AppGui extends javax.swing.JFrame {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 javax.swing.JFrame mainWin = new AppGui();
-                mainWin.setTitle("RotMG Clientless");
+                mainWin.setTitle(AppGui.defaultTitle);
                 mainWin.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
                 mainWin.setLocationRelativeTo(null);
                 
@@ -676,7 +674,7 @@ public class AppGui extends javax.swing.JFrame {
     }
     
     //ROTMG variables
-    private final String defaultTitle = "RotMG Clientless";
+    private static final String defaultTitle = "RotMG Clientless";
     private String email;
     private boolean autoStore = true;
     private boolean collectVaultInfo = false;
@@ -894,14 +892,6 @@ public class AppGui extends javax.swing.JFrame {
                 }
             }
         });
-        //Upon client disconnect save the vault data of a client.
-        AppGui.this.proxy.hookDisconnected(new ConnectionListener() {
-            @Override
-            public void onConnection(Client client) {
-                //AppGui.this.btnLogin.setEnabled(true);
-                //System.out.println("BTN ENABLED");
-            }
-        });
         
         //Upon client reconnects, load the old vault chest data.
         AppGui.this.proxy.hookReconnect(new ConnectionListener() {
@@ -933,7 +923,11 @@ public class AppGui extends javax.swing.JFrame {
                     if(client.isInventoryEmpty() && client.hasBackpack && client.isBackpackEmpty()) {
                         return;
                     }
-                    client.reconnect(GameId.VAULT);
+                    if(!client.reconnect(GameId.VAULT)) {
+                        AppGui.logger.log(Level.INFO, () -> "Failed to connect to vault.");
+                        AppGui.this.logArea.append("Failed to deposit items.");
+                        return;
+                    }
 
                     //wait for the chest data to come in.
                     while((client.getTime() - client.vaultDataLastUpdated) < 2000) {
@@ -991,10 +985,15 @@ public class AppGui extends javax.swing.JFrame {
                         }
                     }
                     
-                    client.reconnect(GameId.NEXUS);                    
-                    AppGui.this.btnTrade.setEnabled(true);
-                    AppGui.this.btnStoreItems.setEnabled(true);
-                    AppGui.this.logArea.append("Deposited [" + numItemsStored + "] items in chests." + newLine);
+                    if(client.reconnect(GameId.NEXUS)) {                    
+                        AppGui.this.btnTrade.setEnabled(true);
+                        AppGui.this.btnStoreItems.setEnabled(true);
+                        AppGui.this.logArea.append("Deposited [" + numItemsStored + "] items in chests." + newLine);
+                    } else {
+                        AppGui.logger.log(Level.INFO, () -> "Failed to return to nexus after storing items.");
+                        AppGui.this.logArea.append("Failed to return to nexus.");
+                        return;
+                    }
                 } catch(InterruptedException | CloneNotSupportedException e) {
                     AppGui.logger.log(Level.WARNING, e, () -> "Failed to store items.");
                 }
@@ -1027,7 +1026,6 @@ public class AppGui extends javax.swing.JFrame {
                             }
                         }
                     }
-                    //AppGui.this.logArea.append("Finished loadVaultData task." + newLine);
                 } catch(InterruptedException e) {
                     AppGui.logger.log(Level.WARNING, () -> "Failed to load vault chest data.");
                 }
@@ -1051,7 +1049,7 @@ public class AppGui extends javax.swing.JFrame {
                 String email = arr.getJSONObject(i).getString("email");
                 String password = arr.getJSONObject(i).getString("password");
                 int charId = arr.getJSONObject(i).getInt("charid");
-                AppGui.logger.log(Level.FINE, () -> "read obj: [" + email + ", " + password + ", " + charId + "]");
+                //AppGui.logger.log(Level.FINE, () -> "read obj: [" + email + ", " + password + ", " + charId + "]");
                 accMap.put(email, new Account(email, password, charId));
             }
         } catch (IOException e) {
