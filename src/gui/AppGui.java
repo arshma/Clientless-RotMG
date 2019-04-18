@@ -6,11 +6,12 @@ import gamedata.structs.ServerNode;
 import java.awt.Toolkit;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import listeners.ConnectionListener;
 import listeners.PacketListener;
 import listeners.Proxy;
@@ -73,6 +74,7 @@ public class AppGui extends javax.swing.JFrame {
         jLabel8 = new javax.swing.JLabel();
         charIdField = new javax.swing.JTextField();
         btnStoreItems = new javax.swing.JButton();
+        cbVaultData = new javax.swing.JCheckBox();
         filler1 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(32767, 32767));
         filler2 = new javax.swing.Box.Filler(new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0), new java.awt.Dimension(0, 0));
         jMenuBar1 = new javax.swing.JMenuBar();
@@ -222,6 +224,15 @@ public class AppGui extends javax.swing.JFrame {
         });
         btnStoreItems.setEnabled(false);
 
+        cbVaultData.setText("Vault Data");
+        cbVaultData.setToolTipText("If enabled, loads all vault chest data when logging in.");
+        cbVaultData.setDoubleBuffered(true);
+        cbVaultData.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                cbVaultDataItemStateChanged(evt);
+            }
+        });
+
         btnLogin.setEnabled(false);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
@@ -260,12 +271,14 @@ public class AppGui extends javax.swing.JFrame {
                                         .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 285, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                                .addGap(0, 1, Short.MAX_VALUE)
-                                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                                    .addComponent(cbVaulting, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                    .addComponent(btnTrade, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                                            .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
+                                            .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                                                .addGap(0, 0, Short.MAX_VALUE)
+                                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                    .addComponent(cbVaultData)
+                                                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                                        .addComponent(cbVaulting, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                        .addComponent(btnTrade, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))))))
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(jLabel4)
@@ -281,7 +294,7 @@ public class AppGui extends javax.swing.JFrame {
                                         .addComponent(jLabel8)
                                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                                         .addComponent(charIdField, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                 .addComponent(btnLogin, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)))))
                 .addContainerGap())
         );
@@ -306,10 +319,11 @@ public class AppGui extends javax.swing.JFrame {
                         .addComponent(jLabel3)
                         .addComponent(serverComboBox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(jLabel4))
-                .addGap(14, 14, 14)
+                .addGap(10, 10, 10)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel7)
-                    .addComponent(jLabel6))
+                    .addComponent(jLabel6)
+                    .addComponent(cbVaultData))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
@@ -317,7 +331,7 @@ public class AppGui extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(btnTrade, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, 39, Short.MAX_VALUE))
+                        .addComponent(btnStoreItems, javax.swing.GroupLayout.DEFAULT_SIZE, 38, Short.MAX_VALUE))
                     .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -430,7 +444,7 @@ public class AppGui extends javax.swing.JFrame {
     }//GEN-LAST:event_btnTradeActionPerformed
 
     private void tradeNameFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tradeNameFieldActionPerformed
-
+       
     }//GEN-LAST:event_tradeNameFieldActionPerformed
 
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
@@ -438,8 +452,15 @@ public class AppGui extends javax.swing.JFrame {
         this.workerPool.execute(new Runnable() {
             @Override
             public void run() {
-                if(AppGui.this.client.isLoggedIn()) {
-                    AppGui.this.logoff();
+                //Disable login button until char logged in or client fully disconnected or login fails.
+                AppGui.this.btnLogin.setEnabled(false);
+                
+                if(AppGui.this.client.isConnected()) {
+                    if(AppGui.this.client.isReconnecting) {
+                        AppGui.this.logoff();
+                    }
+                    AppGui.this.client.disconnect();
+                    AppGui.this.btnLogin.setEnabled(true);
                 } else {
                     try {
                         AppGui.this.email = AppGui.this.emailField.getText();
@@ -451,42 +472,54 @@ public class AppGui extends javax.swing.JFrame {
                         }
                         if(AppGui.this.server == null) {
                             AppGui.this.logArea.append("ERROR: No server selected." + newLine);
+                            AppGui.this.btnLogin.setEnabled(true);
                             return;
                         }
 
-                        AppGui.this.logArea.append("Attempting to connect to server...[" + AppGui.this.server.name + "]" +newLine);
+                        AppGui.this.logArea.append("Attempting to connect to server [" + AppGui.this.server.name + "]..." + newLine);
                         if(!AppGui.this.client.connect(AppGui.this.server)) {
-                            throw new java.net.ConnectException();
+                            AppGui.this.logArea.append("Unable to connect to server. Check if client is up to date." + newLine);
+                            AppGui.logger.log(Level.INFO, () -> "Unable to connect to the server.");
+                            AppGui.this.btnLogin.setEnabled(true);
+                            return;
                         }
                         
                         AppGui.this.logArea.append("Attempting to login..." + newLine);
-                        if(!AppGui.this.client.login(new Account(AppGui.this.email, password, charId), GameId.NEXUS)) {
-                            throw new Exception("Email or password is invalid.");
+                        if(!AppGui.this.client.login(new Account(AppGui.this.email, password, charId), (AppGui.this.collectVaultInfo?GameId.VAULT : GameId.NEXUS))) {
+                            AppGui.this.logArea.append("Unable to login." + newLine);
+                            AppGui.logger.log(Level.INFO, () -> "Unable to login.");
+                            if(AppGui.this.client.isConnected()) {
+                                    AppGui.this.client.disconnect();
+                            }
+                            AppGui.this.btnLogin.setEnabled(true);
+                            return;
                         }
                         
-                        //Wait for account name to be set.
+                        //Wait for account name to be set via first UPDATE packet.
                         while(AppGui.this.client.accountName == null) {
-                            System.out.println("NOTICE::AppGui: Account name not set yet.");
-                            Thread.sleep(150);
+                            AppGui.logger.log(Level.INFO, () -> "Account name not set yet.");
+                            Thread.sleep(100);
                         }
 
                         AppGui.this.setTitle(AppGui.this.getTitle() + " - " + email + "[" + AppGui.this.client.accountName + "]");
+                        AppGui.this.logArea.append("Successfuly logged into to server [" + AppGui.this.server.name + 
+                                                   "] on character [" + AppGui.this.client.accountName + "]" + newLine);
                         AppGui.this.btnLogin.setText("Logout");
-                        AppGui.this.btnTrade.setEnabled(true);
-                        AppGui.this.btnStoreItems.setEnabled(true);
-                        AppGui.this.logArea.append("Successfuly connected to server [" + AppGui.this.server.name + "]" + newLine);
-                    } catch(java.net.ConnectException e) {
-                        AppGui.this.logArea.append("Unable to connect to server. Check if client is up to date." + newLine);
-                    } catch(java.lang.NumberFormatException e) {
-                        AppGui.this.logArea.append("Character ID is invalid. It must be an integer.");
-                    } catch (Exception e) {
-                        String errMsg = "Unable to login.";
-                        if(e.getMessage() != null) {
-                            errMsg += " " + e.getMessage();
+                        AppGui.this.btnLogin.setEnabled(true);
+                        
+                        if(AppGui.this.collectVaultInfo) {
+                            new Thread(AppGui.this.loadVaultDataTask).start();                            
+                        } else {                        
+                            AppGui.this.btnTrade.setEnabled(true);
+                            AppGui.this.btnStoreItems.setEnabled(true);
                         }
-                        AppGui.this.logArea.append(errMsg + newLine);
-                        //safely dispose of the connection.
-                        AppGui.this.logoff();
+                    } catch(NumberFormatException e) {
+                        AppGui.this.logArea.append("Character ID is invalid. It must be an integer.");
+                    } catch (Exception e) {                        
+                        AppGui.this.logArea.append("Failed to login." + newLine);
+                        if(AppGui.this.client.isConnected()) {
+                            AppGui.this.client.disconnect();
+                        }
                     }
                 }
             }
@@ -517,12 +550,31 @@ public class AppGui extends javax.swing.JFrame {
             }
         });
     }//GEN-LAST:event_jMenuItem3ActionPerformed
-    
+
+    private void cbVaultDataItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_cbVaultDataItemStateChanged
+        if(evt.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
+            AppGui.this.collectVaultInfo = true;
+        } else {
+            AppGui.this.collectVaultInfo = false;
+        }
+    }//GEN-LAST:event_cbVaultDataItemStateChanged
+
     /*
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
+    public static void main(String args[]) {                
+        //Set up global logger and formatting properties
+        try {
+            util.Logger.loadSettings();
+            //throw new java.lang.ExceptionInInitializerError();
+        } catch(java.lang.ExceptionInInitializerError e) {
+            javax.swing.JOptionPane.showMessageDialog(null, "Failed to initialize Logging utilities", "ERROR", javax.swing.JOptionPane.PLAIN_MESSAGE);
+            System.exit(-1);
+        }        
+        AppGui.logger = util.Logger.getLogger(AppGui.class.getSimpleName());        
+
+        
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -535,20 +587,14 @@ public class AppGui extends javax.swing.JFrame {
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(AppGui.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(AppGui.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(AppGui.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(AppGui.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException e) {
+            AppGui.logger.log(Level.WARNING, e, () -> "Failed to load application icon");
+        } 
         
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
         
         
         /* Create and display the form */
@@ -570,18 +616,60 @@ public class AppGui extends javax.swing.JFrame {
             }
         });
         
-        //Clean up char id files at end from current dir
+        //Clean up char id and lock files
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
-                java.io.File cleanupFiles = new java.io.File("./");
-                System.out.println("Dir: " + cleanupFiles.isDirectory() + ", " + cleanupFiles.getAbsolutePath());
+                java.io.File file = new java.io.File(util.Logger.getLoggingPath() + "/shutdownlog.txt");
+                java.io.PrintWriter out = null;
+                try {
+                    out = new java.io.PrintWriter(file);
+                    
+                    out.println("Cleaning ACC files: ");
+                    java.io.File cleanupFiles = new java.io.File("./res/temp");
+                    for(java.io.File f : cleanupFiles.listFiles()) {
+                        if(f.getName().contains(".acc")) {                       
+                            out.println("Deleting file: " + f.getAbsolutePath());
+                            f.delete();
+                        }
+                    }
+
+                    out.println("Cleaning LCK files: ");
+                    for(java.io.File f : new java.io.File(util.Logger.getLoggingPath()).listFiles()) {
+                        if(f.getName().contains(".lck")) {
+                            out.println("Deleting file: " + f.getAbsolutePath());
+                            f.delete();
+                        }
+                    }
+                } catch (IOException e) {
+                    System.out.println("Failed to log shutdown.");
+                } finally {
+                    if(out != null)
+                        out.close();
+                }                
+                
+                /*
+                AppGui.logger.log(Level.INFO, () -> "CLEAN UP ACC FILES: ");
+                System.out.println("CLEAN UP ACC FILES: ");
+                java.io.File cleanupFiles = new java.io.File("./res/temp");
                 for(java.io.File f : cleanupFiles.listFiles()) {
-                    if(f.getName().contains(".acc")) {
-                        //System.out.println(f.getName());
+                    if(f.getName().contains(".acc")) {                       
                         f.delete();
+                        AppGui.logger.log(Level.INFO, () -> "Deleting file: " + f.getAbsolutePath());
+                        System.out.println("Deleting file: " + f.getAbsolutePath());
                     }
                 }
+                
+                AppGui.logger.log(Level.INFO, () -> "CLEAN UP LCK FILES: ");
+                System.out.println("CLEAN UP LCK FILES: ");
+                for(java.io.File f : new java.io.File(util.Logger.getLoggingPath()).listFiles()) {
+                    if(f.getName().contains(".lck")) {
+                        f.delete();
+                        AppGui.logger.log(Level.INFO, () -> "Deleting file: " + f.getAbsolutePath());
+                        System.out.println("Deleting file: " + f.getAbsolutePath());
+                    }
+                }
+                */
             }
         }));
         
@@ -591,12 +679,14 @@ public class AppGui extends javax.swing.JFrame {
     private final String defaultTitle = "RotMG Clientless";
     private String email;
     private boolean autoStore = true;
+    private boolean collectVaultInfo = false;
     
     private Proxy proxy;
     private Client client;
     private ArrayList<String> serverList;
     private ServerNode server;
     private Runnable storeTask;
+    private Runnable loadVaultDataTask;
     private Map<String, Account> accounts;
     private HashMap<Integer, VaultChest> vaultChestsBackup;
     private final static java.awt.Color INVENTORY_COLOR = java.awt.Color.WHITE;
@@ -606,22 +696,18 @@ public class AppGui extends javax.swing.JFrame {
     
     private java.util.concurrent.ExecutorService workerPool = java.util.concurrent.Executors.newFixedThreadPool(1);
     private String newLine = System.lineSeparator();
+    private static java.util.logging.Logger logger;
     
     //Action to perfrom when logging off from a client.
     private void logoff() {
-        if(this.client != null) {
-            if(this.client.isConnected()) {
-                this.client.disconnect();
-            }
-            this.setTitle(this.defaultTitle);
-            this.btnLogin.setText("Login");
-            this.logArea.append("Disconnecting from server..." + newLine);
-            this.btnTrade.setEnabled(false);
-            this.btnStoreItems.setEnabled(false);
-        }
+        this.setTitle(this.defaultTitle);
+        this.btnLogin.setText("Login");
+        this.logArea.append("Disconnecting from server..." + newLine);
+        this.btnTrade.setEnabled(false);
+        this.btnStoreItems.setEnabled(false);
     }
     
-    //Prepares static game data.
+    //Prepares game and GUI components.
     private void initGamedata() {
         //Loading xmls may be expensive, don't do work in EDT.
         workerPool.execute(new java.lang.Runnable() {
@@ -641,7 +727,9 @@ public class AppGui extends javax.swing.JFrame {
                     Collections.sort(AppGui.this.serverList);
                     //new model with server list for already created server combobox
                     AppGui.this.serverComboBox.setModel(new javax.swing.DefaultComboBoxModel(AppGui.this.serverList.toArray()));
-                    AppGui.this.serverComboBox.setSelectedItem("USWest");
+                    Thread.sleep(150);
+                    AppGui.this.serverComboBox.setSelectedItem("USWest"); 
+
                     ServerNode sNode = GameData.servers.byName("USWest");
                     if(sNode == null) {
                         AppGui.this.logArea.append("Unable select server [USWest].");
@@ -691,7 +779,7 @@ public class AppGui extends javax.swing.JFrame {
             public void onPacketReceived(Client client, Packet packet) {
                 if(client.itemListsUpdated) {
                     javax.swing.DefaultListModel<String> listModel = new javax.swing.DefaultListModel<String>();
-                    System.out.println("Vault chests size: " + client.vaultChests.size());
+                    AppGui.logger.log(Level.FINE, () -> "Vault chests size: " + client.vaultChests.size());
                     
                     int i = 1;
                     for(Integer item : AppGui.this.client.inv) {
@@ -734,8 +822,7 @@ public class AppGui extends javax.swing.JFrame {
                 atp.yourOffers = tap.partnerOffers;
                 client.sendQueue.add(atp);
             }
-        });
- 
+        }); 
         
         //Upon completed trade, store items if vaulting is enabled.
         AppGui.this.proxy.hookPacket(PacketType.TRADEDONE, new PacketListener() {
@@ -747,21 +834,18 @@ public class AppGui extends javax.swing.JFrame {
                     workerPool.execute(AppGui.this.storeTask);                    
                 }
             }
-        });
-        
+        });        
         
         //Upon failure, reset GUI
         AppGui.this.proxy.hookPacket(PacketType.FAILURE, new PacketListener() {
             @Override
-            public void onPacketReceived(Client client, Packet packet) {
-                System.out.println("NOTICE::AppGui: Failure!");
+            public void onPacketReceived(Client client, Packet packet) {                
                 FailurePacket fp = (FailurePacket)packet;
-                AppGui.this.logArea.append("Connection terminated due to failure...[" + fp.errorMessage + "]" + newLine);
-                AppGui.this.logoff();
+                AppGui.this.logArea.append("Failed action; Failure ID: [" + fp.errorId + "], Failure msg: [" + fp.errorMessage + "]" + newLine);
             }
         });
         
-        
+               
         //Load login info from saved accounts list
         AppGui.this.jlAccountList.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
@@ -798,13 +882,27 @@ public class AppGui extends javax.swing.JFrame {
             }
         });
         
+        
         //Upon client disconnect save the vault data of a client.
         AppGui.this.proxy.hookDisconnect(new ConnectionListener() {
             @Override
             public void onConnection(Client client) {
                 AppGui.this.vaultChestsBackup = new HashMap(client.vaultChests);
+                if(!client.isReconnecting) {
+                    AppGui.logger.log(Level.INFO, "Resetting GUI upon logging out...");
+                    AppGui.this.logoff();
+                }
             }
-        });        
+        });
+        //Upon client disconnect save the vault data of a client.
+        AppGui.this.proxy.hookDisconnected(new ConnectionListener() {
+            @Override
+            public void onConnection(Client client) {
+                //AppGui.this.btnLogin.setEnabled(true);
+                //System.out.println("BTN ENABLED");
+            }
+        });
+        
         //Upon client reconnects, load the old vault chest data.
         AppGui.this.proxy.hookReconnect(new ConnectionListener() {
             @Override
@@ -828,7 +926,7 @@ public class AppGui extends javax.swing.JFrame {
                     
                     
                     if((numItemsMoved = client.moveItemsToBackpack()) > 0) {
-                        AppGui.this.logArea.append("Moved [" + numItemsMoved + "] items to backpack..." + newLine);
+                        AppGui.this.logArea.append("Moved [" + numItemsMoved + "] items to backpack." + newLine);
                     }
                     
                     //Only try to vault items if there are items in inventory or backpack.
@@ -883,8 +981,8 @@ public class AppGui extends javax.swing.JFrame {
                                     client.sendQueue.add(isp);
                                     numItemsStored++;
 
-                                    System.out.println("From: " + isp.slotObject1);
-                                    System.out.println("To: " + isp.slotObject2);
+                                    AppGui.logger.log(Level.FINE, () -> "From: " + isp.slotObject1);
+                                    AppGui.logger.log(Level.FINE, () -> "To: " + isp.slotObject2);
 
                                     Thread.sleep(650);                                    
                                     break;
@@ -896,9 +994,42 @@ public class AppGui extends javax.swing.JFrame {
                     client.reconnect(GameId.NEXUS);                    
                     AppGui.this.btnTrade.setEnabled(true);
                     AppGui.this.btnStoreItems.setEnabled(true);
-                    AppGui.this.logArea.append("Deposited [" + numItemsStored + "] items in chests..." + newLine);
+                    AppGui.this.logArea.append("Deposited [" + numItemsStored + "] items in chests." + newLine);
                 } catch(InterruptedException | CloneNotSupportedException e) {
-                    e.printStackTrace();
+                    AppGui.logger.log(Level.WARNING, e, () -> "Failed to store items.");
+                }
+            }
+        };
+        
+        this.loadVaultDataTask = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if(AppGui.this.client.isConnected() && AppGui.this.client.isLoggedIn()) {
+                        AppGui.logger.log(Level.INFO, () -> "Loading vault chest data...");
+                        AppGui.this.logArea.append("Collecting vault data...Please wait..." + newLine);
+                        //Load left chest area in vault
+                        client.moveToFreely(new Location(33.4f, 72.9f));
+                        while(AppGui.this.client.isConnected() && !client.position.isSameAs(client.moveToPos)) {
+                            Thread.sleep(200);
+                        }
+                        //Load right chest area in vault
+                        client.moveToFreely(new Location(55.7f, 72.9f));
+                        while(AppGui.this.client.isConnected() && !client.position.isSameAs(client.moveToPos)) {
+                            Thread.sleep(200);
+                        }
+                        if(AppGui.this.client.isConnected() && AppGui.this.client.isLoggedIn()) {
+                            AppGui.this.logArea.append("Attempting to connect to [Nexus]..." + newLine);
+                            if(client.reconnect(GameId.NEXUS)) {
+                                AppGui.this.logArea.append("Connected to [Nexus]." + newLine);
+                                AppGui.this.btnTrade.setEnabled(true);
+                                AppGui.this.btnStoreItems.setEnabled(true);                                
+                            }
+                        }
+                    }
+                    //AppGui.this.logArea.append("Finished loadVaultData task." + newLine);
+                } catch(InterruptedException e) {
+                    AppGui.logger.log(Level.WARNING, () -> "Failed to load vault chest data.");
                 }
             }
         };
@@ -920,20 +1051,17 @@ public class AppGui extends javax.swing.JFrame {
                 String email = arr.getJSONObject(i).getString("email");
                 String password = arr.getJSONObject(i).getString("password");
                 int charId = arr.getJSONObject(i).getInt("charid");
-                System.out.println("read obj: [" + email + ", " + password + ", " + charId + "]");
+                AppGui.logger.log(Level.FINE, () -> "read obj: [" + email + ", " + password + ", " + charId + "]");
                 accMap.put(email, new Account(email, password, charId));
             }
-        } catch (FileNotFoundException  e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
+            AppGui.logger.log(Level.WARNING, e, () -> "Failed to load saved accounts");
         } finally {
             try {
-                br.close();
+                if(br != null)
+                    br.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                AppGui.logger.log(Level.WARNING, e, () -> "Failed to close json accounts file");
             }
             return accMap;
         }
@@ -977,18 +1105,16 @@ public class AppGui extends javax.swing.JFrame {
             bw.write(jo.toString());
             bw.close();
             AppGui.this.logArea.append("Saved account info for account [" + newEmail + "]" + newLine);
-        } catch (FileNotFoundException  e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
+            AppGui.logger.log(Level.WARNING, e, () -> "Failed to save accounts");
         } finally {
             try {
-                br.close();
-                bw.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                if(br != null)
+                    br.close();
+                if(bw != null)
+                    bw.close();
+            } catch (Exception e) {
+                AppGui.logger.log(Level.WARNING, e, () -> "Failed to close read/write handlers for accounts JSON file");
             }
         }
     }
@@ -1028,18 +1154,16 @@ public class AppGui extends javax.swing.JFrame {
             bw.write(jo.toString());
             bw.close();
             AppGui.this.logArea.append("Removed saved account [" + entry + "] from list." + newLine);
-        } catch (FileNotFoundException  e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
+            AppGui.logger.log(Level.WARNING, e, () -> "Failed to remove account");
         } finally {
             try {
-                br.close();
-                bw.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+                if(br != null)
+                    br.close();
+                if(bw != null)
+                    bw.close();
+            } catch (Exception e) {
+                AppGui.logger.log(Level.WARNING, e, () -> "Failed to close read/write handlers for accounts JSON file");
             }
         }
     }
@@ -1049,6 +1173,7 @@ public class AppGui extends javax.swing.JFrame {
     private javax.swing.JButton btnLogin;
     private javax.swing.JButton btnStoreItems;
     private javax.swing.JButton btnTrade;
+    private javax.swing.JCheckBox cbVaultData;
     private javax.swing.JCheckBox cbVaulting;
     private javax.swing.JTextField charIdField;
     private javax.swing.JTextField emailField;
