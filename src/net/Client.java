@@ -58,7 +58,7 @@ public class Client {
     
     public boolean itemListsUpdated = false;
     public boolean isReconnecting = false;
-    private Float clientSpeed = 1.0f;
+    private Float clientSpeed = 0.8f;
     public Boolean hasBackpack = false;
     public int vaultDataLastUpdated = -1;
     
@@ -148,16 +148,17 @@ public class Client {
     }
     
     public void disconnect() {        
-        new Thread(new Runnable() {
+        Thread disconThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 if(Client.this.connected) {
                     try {
+                        Client.logger.log(Level.INFO, () -> "Client disconnect started.");
                         Client.this.connected = false;
                         Client.this.proxy.fireClientDisconnect(Client.this);
                         Client.this.loggedin = false;
-                        Client.this.sendThread.join();
-                        Client.this.receiveThead.join();
+                        //Client.this.sendThread.join();
+                        //Client.this.receiveThead.join();
                         Client.this.serverInputStream.close();
                         Client.this.serverOutputStream.close();
                         Client.this.serverConnection.close();
@@ -182,13 +183,20 @@ public class Client {
                         Client.this.backpack.clear();
                         //Client.this.sendQueue.clear();
                         Client.logger.log(Level.INFO, () -> "Client disconnected.");
+                        Client.this.proxy.fireClientDisconnected(Client.this);
                     } catch(Exception e) {
                         Client.logger.log(Level.SEVERE, e, () -> "Failed to disconnect client.");
                         throw new java.lang.IllegalStateException("Failed to disconnect client.");
                     }
                 }
             }
-        }).start();      
+        });   
+        disconThread.start();
+        try {
+            disconThread.join();
+        } catch(InterruptedException e) {
+            Client.logger.log(Level.WARNING, e, () -> "Disconnect method failed.");
+        }
     }
     
     //Note: acc.charId > 0 => use id specified in param account 
@@ -225,6 +233,7 @@ public class Client {
                         Client.this.charId = acc.charId;
                     }
                     
+                    Client.this.sendQueue.clear();
                     //notify listeners of beginning of connection
                     Client.this.proxy.fireClientBeginConnect(Client.this);
                     
@@ -251,7 +260,8 @@ public class Client {
                     int time = 0;
                     while(!Client.this.loggedin) {
                         if(time > 10000 || (!Client.this.connected)) {
-                            Client.logger.log(Level.INFO, () -> "Terminating login.");
+                            Client.logger.log(Level.INFO, () -> "Terminating login. Clearing send queue");
+                            Client.this.sendQueue.clear();
                             return;
                         }
                         time += 200;
@@ -284,11 +294,14 @@ public class Client {
                     if(!Client.this.connected || !Client.this.loggedin) {
                         return;
                     }
+                    Client.logger.log(Level.INFO, () -> "Setting reconnect flag.");
                     Client.this.isReconnecting = true;
                     
                     //disconnect from previous connection
                     Client.this.disconnect();
                     
+                    /*
+                    //NOTE: Disconnect is blocking, thus, there is no need to wait for connection to terminate.
                     //give server sufficient time to terminate connection fully
                     int time = 0;
                     while(Client.this.connected || Client.this.loggedin) {
@@ -298,7 +311,8 @@ public class Client {
                         time += 500;
                         Thread.sleep(500);
                     }
-
+                    */
+                    
                     //Reconnect to the same server
                     if(!Client.this.connect(Client.this.connectedServer)) {
                         return;
@@ -309,21 +323,16 @@ public class Client {
 
                     //Reconnect to the same character but with @param gameid
                     if(!Client.this.login(new Account(Client.this.email, Client.this.password, Client.this.charId), gameId)) {
+                        Client.logger.log(Level.INFO, ()->"Reconnect login failed. Clearing the send queue.");
                         Client.this.disconnect();
+                        Client.this.sendQueue.clear();
                         return;
-                    }
-                    
-                    /*
-                    //Wait for account name to be set; this is first update packet.
-                    while(Client.this.accountName == null) {
-                        Client.logger.log(Level.INFO, () -> "Account name not set yet.");
-                        Thread.sleep(150);
-                    }
-                    */
-                } catch (InterruptedException e) {
-                    Client.logger.log(Level.WARNING, e, () -> "Unable to reconnect to the server");
+                    }                    
+                } catch (Exception e) {
+                    Client.logger.log(Level.WARNING, e, () -> "Failed to reconnect to the server");
                     Client.this.disconnect();
                 } finally {
+                    Client.logger.log(Level.INFO, () -> "Turning off reconnect flag.");
                     Client.this.isReconnecting = false;
                 }
             }            
@@ -416,7 +425,7 @@ public class Client {
     }
     
     public void moveToFreely(Location loc) {
-        synchronized(this.moveToPos) {
+        synchronized(this) {
             this.moveToPos = loc;
         }
     }
