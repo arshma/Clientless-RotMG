@@ -23,6 +23,7 @@ public class Proxy {
     private static final java.util.logging.Logger logger = util.Logger.getLogger(Proxy.class.getSimpleName());
     private final ArrayList<ConnectionListener> clientBeginConnect;
     private final ArrayList<ConnectionListener> clientDisconnect;
+    private final ArrayList<ConnectionListener> clientDisconnected;
     private final ArrayList<ConnectionListener> clientReconnect;
     private final ArrayList<PacketListener> serverPacketReceived;
     private final Map<PacketType, ArrayList<PacketListener>> packetHooks;
@@ -33,6 +34,7 @@ public class Proxy {
         this.serverPacketReceived = new ArrayList<PacketListener>(5);
         this.clientBeginConnect = new ArrayList<ConnectionListener>(5);
         this.clientDisconnect = new ArrayList<ConnectionListener>(5);
+        this.clientDisconnected = new ArrayList<ConnectionListener>(5);
         this.clientReconnect = new ArrayList<ConnectionListener>(5);        
         
         this.defaultHooks();
@@ -66,9 +68,14 @@ public class Proxy {
         this.clientBeginConnect.add(listener);
     }
     
-    //Registers listeners for when client disconnects from server
+    //Registers listeners for when client begins to disconnect from server
     public void hookDisconnect(ConnectionListener listener) {
         this.clientDisconnect.add(listener);
+    }
+    
+    //Registers listeners for when client is disconnected from server.
+    public void hookDisconnected(ConnectionListener listener) {
+        this.clientDisconnected.add(listener);
     }
     
     //Registers listeners for when client attempts to reconnect to sever.
@@ -100,6 +107,13 @@ public class Proxy {
     //Notify registered listeners of client disconnecting from server.
     public void fireClientDisconnect(Client client) {
         for(ConnectionListener listener : this.clientDisconnect) {
+            listener.onConnection(client);
+        }
+    }
+    
+    //Notify registered listeners of client has fully disconnected from server.
+    public void fireClientDisconnected(Client client) {
+        for(ConnectionListener listener : this.clientDisconnected) {
             listener.onConnection(client);
         }
     }
