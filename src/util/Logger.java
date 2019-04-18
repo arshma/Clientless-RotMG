@@ -11,7 +11,7 @@ public class Logger {
     private static final java.util.logging.FileHandler fHandler;
     private static final java.util.logging.Formatter formatter;
     private static String dirPath;
-    private static final Level defaultLevel = Level.ALL;
+    private static final Level defaultLevel = Level.WARNING;
     
     private Logger() { }
     
@@ -29,7 +29,7 @@ public class Logger {
             throw new java.lang.IllegalStateException("Failed to create logging file handler");
         } 
         formatter = new java.util.logging.SimpleFormatter() {
-            private static final String format = "[%1$tF %1$tT.%1$tL | %3$s | %4$-7s]: %5$s %6$s%n";
+            private static final String format = "[%1$tF %1$tT.%1$tL | %3$-10s | %4$-7s]: %5$s %6$s%n";
             
             @Override
             public synchronized String format(java.util.logging.LogRecord lr) {
