@@ -2,9 +2,15 @@
 
 Used to play RotMG without a flash client.
 
-Note: prebuilt jar available in /dist if you didn't want to build. It was built on Netbeans. It also includes build files in in /build.
+Custom Features:
+- Automate items deposits to vault.
+- Save account login info for quick login.
+- Color coded inventory/backpack/vault items.
+- Easy trade UI.
+
+
+Note: Prebuilt jar available in /dist if you didn't want to build. 
 
 Requirements:
-1) JCE - to allow key sizes over 128 bits.
-   download from: https://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
-2) XMLGrabber1.0+ by ninjin.
+1) XMLGrabber1.0+ by ninjin. It is used to extract game data (objects, tiles, items, etc...). A copy is included in /dist.
+2) Java 8. https://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html
