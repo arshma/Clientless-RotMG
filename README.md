@@ -2,6 +2,9 @@
 
 Used to play RotMG without a flash client.
 
+## Download
+<a href="https://github.com/arshma/Clientless-RotMG/releases"> releases </a>
+
 ### Custom Features:
 - Automate items deposits to vault.
 - Save account login info for quick login.
