@@ -11,9 +11,6 @@ Used to play RotMG without a flash client.
 - Color coded inventory/backpack/vault items.
 - Easy trade UI.
 
-
-Note: Prebuilt jar available in /dist if you didn't want to build. 
-
 ### Requirements:
 1) XMLGrabber1.0+ by Ninjin. It is used to extract game data (objects, tiles, items, etc...). A copy is included in /dist. Or you can get    a copy from: https://github.com/Ninjin89/xmlgrabber
 2) Java 8. https://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html
